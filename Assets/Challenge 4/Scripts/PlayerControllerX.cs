@@ -16,6 +16,7 @@ public class PlayerControllerX : MonoBehaviour
 
     private float normalStrength = 10; // normal knockback
     private float powerupStrength = 25; // boosted knockback
+    private Coroutine knockbackCoroutine; // tracked so we can reset the timer on re-pickup
 
     // smash powerup
     public bool hasSmashPowerup;
@@ -46,9 +47,11 @@ public class PlayerControllerX : MonoBehaviour
 
     void Update()
     {
-        // move player toward where camera faces
+        // move player relative to camera direction (WASD)
         float verticalInput = Input.GetAxis("Vertical");
-        playerRb.AddForce(focalPoint.transform.forward * verticalInput * speed * Time.deltaTime);
+        float horizontalInput = Input.GetAxis("Horizontal");
+        Vector3 moveDirection = focalPoint.transform.forward * verticalInput + focalPoint.transform.right * horizontalInput;
+        playerRb.AddForce(moveDirection * speed * Time.deltaTime);
 
         // turbo boost on spacebar
         if (Input.GetKeyDown(KeyCode.Space))
@@ -87,7 +90,13 @@ public class PlayerControllerX : MonoBehaviour
             Destroy(other.gameObject);
             hasPowerup = true;
             powerupIndicator.SetActive(true);
-            StartCoroutine(PowerupCooldown());
+
+            // cancel old timer if picking up another knockback while one is active
+            if (knockbackCoroutine != null)
+            {
+                StopCoroutine(knockbackCoroutine);
+            }
+            knockbackCoroutine = StartCoroutine(PowerupCooldown());
         }
 
         if (other.gameObject.CompareTag("SmashPowerup"))

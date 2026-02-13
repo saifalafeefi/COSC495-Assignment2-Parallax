@@ -18,6 +18,13 @@ public class SpawnManagerX : MonoBehaviour
     private bool spawnSmashNext = false; // toggles which powerup type spawns next
 
     public GameObject player;
+    private Vector3 playerStartPos; // saved at start so player resets independently
+
+    void Start()
+    {
+        // remember where the player started
+        playerStartPos = player.transform.position;
+    }
 
     void Update()
     {
@@ -29,19 +36,18 @@ public class SpawnManagerX : MonoBehaviour
         }
     }
 
-    // random position in the enemy spawn zone
+    // random position relative to the spawn manager's position
     Vector3 GenerateSpawnPosition()
     {
         float xPos = Random.Range(-spawnRangeX, spawnRangeX);
         float zPos = Random.Range(spawnZMin, spawnZMax);
-        return new Vector3(xPos, 0, zPos);
+        return transform.position + new Vector3(xPos, 0, zPos);
     }
 
     void SpawnEnemyWave(int enemiesToSpawn)
     {
-        Vector3 powerupSpawnOffset = new Vector3(0, 0, -15); // push powerup toward player side
-
-        // spawn a powerup if none exist on the field, alternating type each wave
+        // spawn a powerup if none exist, alternating type each wave
+        // uses the prefab's own transform.position as offset so you can adjust it per prefab
         bool hasRegularPowerup = GameObject.FindGameObjectsWithTag("KnockbackPowerup").Length > 0;
         bool hasSmashPowerup = GameObject.FindGameObjectsWithTag("SmashPowerup").Length > 0;
 
@@ -49,29 +55,29 @@ public class SpawnManagerX : MonoBehaviour
         {
             if (spawnSmashNext && smashPowerupPrefab != null)
             {
-                Instantiate(smashPowerupPrefab, GenerateSpawnPosition() + powerupSpawnOffset, smashPowerupPrefab.transform.rotation);
+                Instantiate(smashPowerupPrefab, GenerateSpawnPosition() + smashPowerupPrefab.transform.position, smashPowerupPrefab.transform.rotation);
             }
             else
             {
-                Instantiate(powerupPrefab, GenerateSpawnPosition() + powerupSpawnOffset, powerupPrefab.transform.rotation);
+                Instantiate(powerupPrefab, GenerateSpawnPosition() + powerupPrefab.transform.position, powerupPrefab.transform.rotation);
             }
             spawnSmashNext = !spawnSmashNext;
         }
 
-        // spawn enemies based on wave number
+        // spawn enemies based on wave number, offset by enemy prefab's transform
         for (int i = 0; i < enemiesToSpawn; i++)
         {
-            Instantiate(enemyPrefab, GenerateSpawnPosition(), enemyPrefab.transform.rotation);
+            Instantiate(enemyPrefab, GenerateSpawnPosition() + enemyPrefab.transform.position, enemyPrefab.transform.rotation);
         }
 
         waveCount++;
         ResetPlayerPosition();
     }
 
-    // put player back at start position
+    // reset player to where it was at game start
     void ResetPlayerPosition()
     {
-        player.transform.position = new Vector3(0, 1, -7);
+        player.transform.position = playerStartPos;
         player.GetComponent<Rigidbody>().linearVelocity = Vector3.zero;
         player.GetComponent<Rigidbody>().angularVelocity = Vector3.zero;
     }
