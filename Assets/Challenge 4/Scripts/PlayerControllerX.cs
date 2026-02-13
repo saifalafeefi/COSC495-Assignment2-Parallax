@@ -5,8 +5,10 @@ using UnityEngine;
 public class PlayerControllerX : MonoBehaviour
 {
     private Rigidbody playerRb;
-    private float speed = 500;
+    public float speed = 15;
+    public float maxSpeed = 20f; // top speed the player can reach
     private GameObject focalPoint;
+    public float brakingFactor = 5f; // how fast you stop when changing direction
 
     public bool hasPowerup;
     public GameObject powerupIndicator;
@@ -50,8 +52,26 @@ public class PlayerControllerX : MonoBehaviour
         // move player relative to camera direction (WASD)
         float verticalInput = Input.GetAxis("Vertical");
         float horizontalInput = Input.GetAxis("Horizontal");
-        Vector3 moveDirection = focalPoint.transform.forward * verticalInput + focalPoint.transform.right * horizontalInput;
-        playerRb.AddForce(moveDirection * speed * Time.deltaTime);
+        // flatten to horizontal so looking up/down doesn't launch the player
+        Vector3 flatForward = new Vector3(focalPoint.transform.forward.x, 0, focalPoint.transform.forward.z).normalized;
+        Vector3 flatRight = new Vector3(focalPoint.transform.right.x, 0, focalPoint.transform.right.z).normalized;
+        Vector3 moveDirection = flatForward * verticalInput + flatRight * horizontalInput;
+
+        // brake hard when changing direction, so movement feels snappy
+        Vector3 flatVelocity = new Vector3(playerRb.linearVelocity.x, 0, playerRb.linearVelocity.z);
+        if (moveDirection != Vector3.zero && Vector3.Dot(flatVelocity, moveDirection) < 0)
+        {
+            playerRb.linearVelocity = new Vector3(
+                playerRb.linearVelocity.x * (1f - brakingFactor * Time.deltaTime),
+                playerRb.linearVelocity.y,
+                playerRb.linearVelocity.z * (1f - brakingFactor * Time.deltaTime)
+            );
+        }
+
+        // scale force down as you approach max speed, so acceleration feels gradual
+        float currentSpeed = flatVelocity.magnitude;
+        float speedFactor = Mathf.Clamp01(1f - currentSpeed / maxSpeed);
+        playerRb.AddForce(moveDirection * speed * speedFactor, ForceMode.Force);
 
         // turbo boost on spacebar
         if (Input.GetKeyDown(KeyCode.Space))
