@@ -4,16 +4,29 @@ using UnityEngine;
 
 public class RotateCameraX : MonoBehaviour
 {
-    private float speed = 200;
+    public float mouseSensitivity = 3f;
+    public float verticalSensitivity = 2f;
+    public float minVerticalAngle = -30f; // how far down you can look
+    public float maxVerticalAngle = 60f;  // how far up you can look
     public GameObject player;
 
-    // Update is called once per frame
+    private float verticalAngle = 0f;
+
     void Update()
     {
-        float horizontalInput = Input.GetAxis("Horizontal");
-        transform.Rotate(Vector3.up, horizontalInput * speed * Time.deltaTime);
+        // rotate horizontally with mouse X
+        float mouseX = Input.GetAxis("Mouse X");
+        transform.Rotate(Vector3.up, mouseX * mouseSensitivity);
 
-        transform.position = player.transform.position; // Move focal point with player
+        // tilt vertically with mouse Y, clamped so you can't flip
+        float mouseY = Input.GetAxis("Mouse Y");
+        verticalAngle -= mouseY * verticalSensitivity;
+        verticalAngle = Mathf.Clamp(verticalAngle, minVerticalAngle, maxVerticalAngle);
 
+        Vector3 currentEuler = transform.eulerAngles;
+        transform.eulerAngles = new Vector3(verticalAngle, currentEuler.y, 0f);
+
+        // follow the player
+        transform.position = player.transform.position;
     }
 }
