@@ -30,6 +30,21 @@ public class PlayerControllerX : MonoBehaviour
     public float maxSmashForce = 50f;
     public float minSmashForce = 10f;
 
+    // smash aiming system
+    public GameObject landingIndicator;
+    public float slowMotionScale = 0.15f;
+    public float diveSpeed = 40f;
+    public float diveAcceleration = 60f; // how much faster the dive gets per second
+    public float launchDuration = 0.5f;
+    public Vector3 smashCameraOffset = new Vector3(1f, 2f, -2f);
+    private RotateCameraX cameraRotator;
+    private CameraShoulderShift shoulderShift;
+    private Vector3 landingTarget;
+    private bool isAiming;
+    private bool diveRequested;
+    private float originalFixedDeltaTime;
+    private LineRenderer aimLine;
+
     void Start()
     {
         playerRb = GetComponent<Rigidbody>();
@@ -45,52 +60,98 @@ public class PlayerControllerX : MonoBehaviour
         {
             turboParticle.Stop();
         }
+
+        // smash aiming setup
+        cameraRotator = focalPoint.GetComponent<RotateCameraX>();
+        shoulderShift = FindObjectOfType<CameraShoulderShift>();
+        originalFixedDeltaTime = Time.fixedDeltaTime;
+        if (landingIndicator != null)
+        {
+            landingIndicator.SetActive(false);
+            // prevent the aim raycast from hitting the indicator itself
+            landingIndicator.layer = LayerMask.NameToLayer("Ignore Raycast");
+        }
+
+        // create aim line renderer
+        aimLine = gameObject.AddComponent<LineRenderer>();
+        aimLine.startWidth = 0.1f;
+        aimLine.endWidth = 0.1f;
+        aimLine.material = new Material(Shader.Find("Sprites/Default"));
+        aimLine.startColor = Color.red;
+        aimLine.endColor = Color.red;
+        aimLine.positionCount = 2;
+        aimLine.enabled = false;
     }
 
     void Update()
     {
-        // move player relative to camera direction (WASD)
-        float verticalInput = Input.GetAxis("Vertical");
-        float horizontalInput = Input.GetAxis("Horizontal");
-        // flatten to horizontal so looking up/down doesn't launch the player
-        Vector3 flatForward = new Vector3(focalPoint.transform.forward.x, 0, focalPoint.transform.forward.z).normalized;
-        Vector3 flatRight = new Vector3(focalPoint.transform.right.x, 0, focalPoint.transform.right.z).normalized;
-        Vector3 moveDirection = flatForward * verticalInput + flatRight * horizontalInput;
+        // always check ground state
+        isGrounded = Physics.Raycast(transform.position, Vector3.down, 1.5f);
 
-        // brake hard when changing direction, so movement feels snappy
-        Vector3 flatVelocity = new Vector3(playerRb.linearVelocity.x, 0, playerRb.linearVelocity.z);
-        if (moveDirection != Vector3.zero && Vector3.Dot(flatVelocity, moveDirection) < 0)
+        // F key: during aiming phase → dive request; otherwise → start smash
+        if (Input.GetKeyDown(KeyCode.F) && isAiming)
         {
-            playerRb.linearVelocity = new Vector3(
-                playerRb.linearVelocity.x * (1f - brakingFactor * Time.deltaTime),
-                playerRb.linearVelocity.y,
-                playerRb.linearVelocity.z * (1f - brakingFactor * Time.deltaTime)
-            );
+            diveRequested = true;
+        }
+        else if (Input.GetKeyDown(KeyCode.F) && hasSmashPowerup && !isSmashing && isGrounded)
+        {
+            StartCoroutine(PerformSmashAttack());
         }
 
-        // scale force down as you approach max speed, so acceleration feels gradual
-        float currentSpeed = flatVelocity.magnitude;
-        float speedFactor = Mathf.Clamp01(1f - currentSpeed / maxSpeed);
-        playerRb.AddForce(moveDirection * speed * speedFactor, ForceMode.Force);
-
-        // turbo boost on spacebar
-        if (Input.GetKeyDown(KeyCode.Space))
+        // update landing indicator + aim line during aiming (follows camera direction)
+        if (isAiming && landingIndicator != null)
         {
-            playerRb.AddForce(focalPoint.transform.forward * turboStrength, ForceMode.Impulse);
-
-            if (turboParticle != null)
+            Ray aimRay = new Ray(transform.position, focalPoint.transform.forward);
+            if (Physics.Raycast(aimRay, out RaycastHit hit, 200f))
             {
-                turboParticle.Play();
+                landingTarget = hit.point;
+                landingIndicator.transform.position = hit.point + new Vector3(0, 0.15f, 0);
+            }
+
+            if (aimLine != null)
+            {
+                aimLine.SetPosition(0, transform.position);
+                aimLine.SetPosition(1, landingIndicator.transform.position);
             }
         }
 
-        // check if player is on the ground
-        isGrounded = Physics.Raycast(transform.position, Vector3.down, 1.5f);
-
-        // press F to smash (only if grounded, has powerup, and not mid-smash)
-        if (Input.GetKeyDown(KeyCode.F) && hasSmashPowerup && !isSmashing && isGrounded)
+        // disable movement and turbo during smash
+        if (!isSmashing)
         {
-            StartCoroutine(PerformSmashAttack());
+            // move player relative to camera direction (WASD)
+            float verticalInput = Input.GetAxis("Vertical");
+            float horizontalInput = Input.GetAxis("Horizontal");
+            // flatten to horizontal so looking up/down doesn't launch the player
+            Vector3 flatForward = new Vector3(focalPoint.transform.forward.x, 0, focalPoint.transform.forward.z).normalized;
+            Vector3 flatRight = new Vector3(focalPoint.transform.right.x, 0, focalPoint.transform.right.z).normalized;
+            Vector3 moveDirection = flatForward * verticalInput + flatRight * horizontalInput;
+
+            // brake hard when changing direction, so movement feels snappy
+            Vector3 flatVelocity = new Vector3(playerRb.linearVelocity.x, 0, playerRb.linearVelocity.z);
+            if (moveDirection != Vector3.zero && Vector3.Dot(flatVelocity, moveDirection) < 0)
+            {
+                playerRb.linearVelocity = new Vector3(
+                    playerRb.linearVelocity.x * (1f - brakingFactor * Time.deltaTime),
+                    playerRb.linearVelocity.y,
+                    playerRb.linearVelocity.z * (1f - brakingFactor * Time.deltaTime)
+                );
+            }
+
+            // scale force down as you approach max speed, so acceleration feels gradual
+            float currentSpeed = flatVelocity.magnitude;
+            float speedFactor = Mathf.Clamp01(1f - currentSpeed / maxSpeed);
+            playerRb.AddForce(moveDirection * speed * speedFactor, ForceMode.Force);
+
+            // turbo boost on spacebar
+            if (Input.GetKeyDown(KeyCode.Space))
+            {
+                playerRb.AddForce(focalPoint.transform.forward * turboStrength, ForceMode.Impulse);
+
+                if (turboParticle != null)
+                {
+                    turboParticle.Play();
+                }
+            }
         }
 
         // keep indicators under the player
@@ -138,24 +199,108 @@ public class PlayerControllerX : MonoBehaviour
         powerupIndicator.SetActive(false);
     }
 
-    // jump up, wait to land, then slam enemies away
+    // 5-phase smash: launch → auto-aim → slow-mo aiming → dive → impact
     IEnumerator PerformSmashAttack()
     {
+        // --- Phase 1: Launch ---
         isSmashing = true;
-
-        // launch into the air
+        diveRequested = false;
         playerRb.AddForce(Vector3.up * smashJumpForce, ForceMode.Impulse);
 
-        // brief pause to reach the top
-        yield return new WaitForSeconds(0.3f);
+        // wait for launch duration then transition to aiming
+        yield return new WaitForSeconds(launchDuration);
 
-        // wait until we hit the ground
-        while (!isGrounded)
+        // --- Phase 2: Auto-aim + camera to right side (tweened together) ---
+        Transform closestEnemy = FindClosestEnemy();
+        float tweenTime = shoulderShift != null ? shoulderShift.tweenDuration : 0.4f;
+
+        if (closestEnemy != null && cameraRotator != null)
+        {
+            EasingType easing = shoulderShift != null ? shoulderShift.tweenEasing : EasingType.EaseInOut;
+            cameraRotator.TweenToPosition(closestEnemy.position, tweenTime, easing);
+        }
+
+        if (shoulderShift != null)
+        {
+            shoulderShift.ForceCameraSide(1f);
+            shoulderShift.ForceShoulderOffset(smashCameraOffset);
+        }
+
+        // --- Phase 3: Slow-mo aiming ---
+        // freeze player in the air
+        playerRb.useGravity = false;
+        playerRb.linearVelocity = Vector3.zero;
+
+        // remove pitch clamp so player can aim straight down
+        if (cameraRotator != null)
+        {
+            cameraRotator.RemovePitchClamp();
+        }
+
+        isAiming = true;
+        if (landingIndicator != null)
+        {
+            landingIndicator.SetActive(true);
+        }
+        if (aimLine != null)
+        {
+            aimLine.enabled = true;
+        }
+
+        Time.timeScale = slowMotionScale;
+        Time.fixedDeltaTime = originalFixedDeltaTime * slowMotionScale;
+
+        // wait for player to press F again
+        while (!diveRequested)
         {
             yield return null;
         }
 
-        // slam down and blast enemies
+        // --- Phase 4: Dive ---
+        isAiming = false;
+        Time.timeScale = 1f;
+        Time.fixedDeltaTime = originalFixedDeltaTime;
+
+        // restore pitch clamp back to normal
+        if (cameraRotator != null)
+        {
+            cameraRotator.RestorePitchClamp();
+        }
+        if (shoulderShift != null)
+        {
+            shoulderShift.ReleaseCameraSide();
+            shoulderShift.ReleaseShoulderOffset();
+        }
+
+        playerRb.useGravity = true;
+        if (landingIndicator != null)
+        {
+            landingIndicator.SetActive(false);
+        }
+        if (aimLine != null)
+        {
+            aimLine.enabled = false;
+        }
+
+        // skip 2 fixed frames so the ground raycast doesn't fire immediately
+        yield return new WaitForFixedUpdate();
+        yield return new WaitForFixedUpdate();
+
+        // continuously accelerate toward landing target until grounded
+        float currentDiveSpeed = diveSpeed;
+        while (!isGrounded)
+        {
+            if (transform.position.y < -5f)
+            {
+                break;
+            }
+            currentDiveSpeed += diveAcceleration * Time.fixedDeltaTime;
+            Vector3 diveDirection = (landingTarget - transform.position).normalized;
+            playerRb.linearVelocity = diveDirection * currentDiveSpeed;
+            yield return new WaitForFixedUpdate();
+        }
+
+        // --- Phase 5: Impact ---
         ApplySmashImpact();
 
         // one-time use, consume it
@@ -163,6 +308,14 @@ public class PlayerControllerX : MonoBehaviour
         if (smashPowerupIndicator != null)
         {
             smashPowerupIndicator.SetActive(false);
+        }
+        if (landingIndicator != null)
+        {
+            landingIndicator.SetActive(false);
+        }
+        if (aimLine != null)
+        {
+            aimLine.enabled = false;
         }
 
         isSmashing = false;
@@ -194,6 +347,45 @@ public class PlayerControllerX : MonoBehaviour
                     enemyRb.AddForce(force, ForceMode.Impulse);
                 }
             }
+        }
+    }
+
+    // find the closest enemy to the player (for auto-aim at apex)
+    Transform FindClosestEnemy()
+    {
+        GameObject[] enemies = GameObject.FindGameObjectsWithTag("Enemy");
+        Transform closest = null;
+        float closestDist = Mathf.Infinity;
+
+        foreach (GameObject enemy in enemies)
+        {
+            float dist = Vector3.Distance(transform.position, enemy.transform.position);
+            if (dist < closestDist)
+            {
+                closestDist = dist;
+                closest = enemy.transform;
+            }
+        }
+
+        return closest;
+    }
+
+    // safety: restore timeScale and camera if player is destroyed mid-smash
+    void OnDisable()
+    {
+        if (Time.timeScale != 1f)
+        {
+            Time.timeScale = 1f;
+            Time.fixedDeltaTime = originalFixedDeltaTime;
+        }
+        if (shoulderShift != null)
+        {
+            shoulderShift.ReleaseCameraSide();
+            shoulderShift.ReleaseShoulderOffset();
+        }
+        if (cameraRotator != null)
+        {
+            cameraRotator.RestorePitchClamp();
         }
     }
 
