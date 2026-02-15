@@ -41,16 +41,24 @@ public class EnemyX : MonoBehaviour
 
     private void OnCollisionEnter(Collision other)
     {
-        // If enemy collides with either goal, destroy it
         if (other.gameObject.name == "Enemy Goal")
         {
-            Destroy(gameObject);
-        } 
-        else if (other.gameObject.name == "Player Goal")
-        {
+            // player scored — notify game manager
+            if (GameManagerX.Instance != null)
+            {
+                GameManagerX.Instance.EnemyScored();
+            }
             Destroy(gameObject);
         }
-
+        else if (other.gameObject.name == "Player Goal")
+        {
+            // enemy got through — player loses a life
+            if (GameManagerX.Instance != null)
+            {
+                GameManagerX.Instance.EnemyReachedPlayerGoal();
+            }
+            Destroy(gameObject);
+        }
     }
 
 }

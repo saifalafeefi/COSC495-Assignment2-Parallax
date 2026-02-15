@@ -28,6 +28,12 @@ public class SpawnManagerX : MonoBehaviour
 
     void Update()
     {
+        // stop spawning when game is over
+        if (GameManagerX.Instance != null && GameManagerX.Instance.isGameOver)
+        {
+            return;
+        }
+
         enemyCount = GameObject.FindGameObjectsWithTag("Enemy").Length;
 
         if (enemyCount == 0)
@@ -72,6 +78,12 @@ public class SpawnManagerX : MonoBehaviour
 
         waveCount++;
         ResetPlayerPosition();
+
+        // update HUD with new wave number
+        if (GameManagerX.Instance != null)
+        {
+            GameManagerX.Instance.SetWave(waveCount);
+        }
     }
 
     // reset player to where it was at game start
