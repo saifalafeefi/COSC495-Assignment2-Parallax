@@ -22,7 +22,7 @@ public class CameraShoulderShift : MonoBehaviour
     private bool offsetOverridden;
     private Vector3 originalOffset;
     private Vector3 targetOffset;
-    private float offsetTweenProgress;
+    private float offsetTweenProgress = 1f; // start done so it doesn't tween on startup
 
     public void ForceCameraSide(float side)
     {
@@ -59,24 +59,35 @@ public class CameraShoulderShift : MonoBehaviour
     void Start()
     {
         thirdPersonFollow = GetComponent<CinemachineThirdPersonFollow>();
+
+        // save the original offset so the startup tween doesn't zero it out
+        if (thirdPersonFollow != null)
+        {
+            originalOffset = thirdPersonFollow.ShoulderOffset;
+            targetOffset = originalOffset;
+        }
     }
 
-    void FixedUpdate()
+    void LateUpdate()
     {
-        if (thirdPersonFollow == null || playerRb == null) return;
+        if (thirdPersonFollow == null || playerRb == null || focalPoint == null) return;
+
+        // don't shift while paused or game over
+        if (GameManagerX.Instance != null && (GameManagerX.Instance.isPaused || GameManagerX.Instance.isGameOver))
+            return;
 
         // tween shoulder offset (runs during both override and normal)
         if (offsetOverridden || offsetTweenProgress < 1f)
         {
-            offsetTweenProgress = Mathf.MoveTowards(offsetTweenProgress, 1f, Time.fixedUnscaledDeltaTime / tweenDuration);
+            offsetTweenProgress = Mathf.MoveTowards(offsetTweenProgress, 1f, Time.unscaledDeltaTime / tweenDuration);
             float eased = Easing.Evaluate(tweenEasing, offsetTweenProgress);
             thirdPersonFollow.ShoulderOffset = Vector3.Lerp(thirdPersonFollow.ShoulderOffset, targetOffset, eased);
         }
 
         if (sideOverridden)
         {
-            // ease-in-out tween using smoothstep, unscaled so slow-mo doesn't affect it
-            tweenProgress = Mathf.MoveTowards(tweenProgress, 1f, Time.fixedUnscaledDeltaTime / tweenDuration);
+            // ease-in-out tween, unscaled so slow-mo doesn't affect it
+            tweenProgress = Mathf.MoveTowards(tweenProgress, 1f, Time.unscaledDeltaTime / tweenDuration);
             float eased = Easing.Evaluate(tweenEasing, tweenProgress);
             thirdPersonFollow.CameraSide = Mathf.Lerp(tweenFrom, overrideSideValue, eased);
             return;
@@ -96,10 +107,10 @@ public class CameraShoulderShift : MonoBehaviour
         else
         {
             // ease back to center when not moving sideways
-            currentTarget = Mathf.MoveTowards(currentTarget, 0.5f, 0.5f * Time.fixedDeltaTime);
+            currentTarget = Mathf.MoveTowards(currentTarget, 0.5f, 0.5f * Time.deltaTime);
         }
 
         // smooth transition
-        thirdPersonFollow.CameraSide = Mathf.Lerp(thirdPersonFollow.CameraSide, currentTarget, shiftSpeed * Time.fixedDeltaTime);
+        thirdPersonFollow.CameraSide = Mathf.Lerp(thirdPersonFollow.CameraSide, currentTarget, shiftSpeed * Time.deltaTime);
     }
 }
