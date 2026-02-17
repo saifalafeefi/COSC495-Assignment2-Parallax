@@ -1,6 +1,7 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using Unity.Cinemachine;
 
 public class PlayerControllerX : MonoBehaviour
 {
@@ -39,8 +40,11 @@ public class PlayerControllerX : MonoBehaviour
     public Vector3 smashCameraOffset = new Vector3(1f, 2f, -2f);
     private RotateCameraX cameraRotator;
     private CameraShoulderShift shoulderShift;
+    private CinemachineBrain cinemachineBrain;
     private Vector3 landingTarget;
     private bool isAiming;
+    private bool isDiving;
+    private bool diveCollided;
     private bool diveRequested;
     private float originalFixedDeltaTime;
     private LineRenderer aimLine;
@@ -64,6 +68,7 @@ public class PlayerControllerX : MonoBehaviour
         // smash aiming setup
         cameraRotator = focalPoint.GetComponent<RotateCameraX>();
         shoulderShift = FindObjectOfType<CameraShoulderShift>();
+        cinemachineBrain = FindObjectOfType<CinemachineBrain>();
         originalFixedDeltaTime = Time.fixedDeltaTime;
         if (landingIndicator != null)
         {
@@ -256,10 +261,8 @@ public class PlayerControllerX : MonoBehaviour
             yield return null;
         }
 
-        // --- Phase 4: Dive ---
+        // --- Phase 4: Dive (still in slow-mo) ---
         isAiming = false;
-        Time.timeScale = 1f;
-        Time.fixedDeltaTime = originalFixedDeltaTime;
 
         // restore pitch clamp back to normal
         if (cameraRotator != null)
@@ -282,25 +285,34 @@ public class PlayerControllerX : MonoBehaviour
             aimLine.enabled = false;
         }
 
-        // skip 2 fixed frames so the ground raycast doesn't fire immediately
-        yield return new WaitForFixedUpdate();
-        yield return new WaitForFixedUpdate();
+        // tell cinemachine to ignore timeScale so camera keeps up during slow-mo dive
+        if (cinemachineBrain != null) cinemachineBrain.IgnoreTimeScale = true;
 
-        // continuously accelerate toward landing target until grounded
+        // dive until we hit something (ground, wall, enemy, anything)
+        isDiving = true;
+        diveCollided = false;
         float currentDiveSpeed = diveSpeed;
-        while (!isGrounded)
+        while (!diveCollided)
         {
             if (transform.position.y < -5f)
             {
                 break;
             }
-            currentDiveSpeed += diveAcceleration * Time.fixedDeltaTime;
+            currentDiveSpeed += diveAcceleration * Time.fixedUnscaledDeltaTime;
             Vector3 diveDirection = (landingTarget - transform.position).normalized;
-            playerRb.linearVelocity = diveDirection * currentDiveSpeed;
+            // compensate for slow-mo so the player dives at full real-time speed
+            float timeCompensation = Time.timeScale > 0 ? 1f / Time.timeScale : 1f;
+            playerRb.linearVelocity = diveDirection * currentDiveSpeed * timeCompensation;
             yield return new WaitForFixedUpdate();
         }
+        isDiving = false;
 
-        // --- Phase 5: Impact ---
+        // --- Phase 5: Impact — kill momentum, restore time, then smash ---
+        playerRb.linearVelocity = Vector3.zero;
+        playerRb.angularVelocity = Vector3.zero;
+        if (cinemachineBrain != null) cinemachineBrain.IgnoreTimeScale = false;
+        Time.timeScale = 1f;
+        Time.fixedDeltaTime = originalFixedDeltaTime;
         ApplySmashImpact();
 
         // one-time use, consume it
@@ -392,6 +404,12 @@ public class PlayerControllerX : MonoBehaviour
     // bump enemies away on contact
     private void OnCollisionEnter(Collision other)
     {
+        // any collision during dive = landed
+        if (isDiving)
+        {
+            diveCollided = true;
+        }
+
         if (other.gameObject.CompareTag("Enemy"))
         {
             Rigidbody enemyRigidbody = other.gameObject.GetComponent<Rigidbody>();
