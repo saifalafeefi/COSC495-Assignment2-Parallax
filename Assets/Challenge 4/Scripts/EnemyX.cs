@@ -1,4 +1,4 @@
-﻿using System.Collections;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -8,7 +8,20 @@ public class EnemyX : MonoBehaviour
     private Rigidbody enemyRb;
     public GameObject playerGoal;
 
-    // Start is called before the first frame update
+    // after getting hit, enemy drifts toward its own goal briefly
+    public float stunSpeed = 3f;        // how hard it moves toward enemy goal while stunned
+    public float stunDuration = 1.5f;   // how long the stun lasts
+    private GameObject enemyGoal;
+    private bool isStunned;
+    private float stunTimer;
+
+    // call this from anywhere to stun the enemy (resets timer if already stunned)
+    public void Stun()
+    {
+        isStunned = true;
+        stunTimer = stunDuration;
+    }
+
     void Start()
     {
         enemyRb = GetComponent<Rigidbody>();
@@ -18,25 +31,36 @@ public class EnemyX : MonoBehaviour
             speed = 10f;
         }
 
-        // Auto-assign Player Goal if it was not set in the Inspector.
         if (playerGoal == null)
         {
             playerGoal = GameObject.Find("Player Goal");
         }
+        enemyGoal = GameObject.Find("Enemy Goal");
     }
 
-    // Update is called once per frame
     void Update()
     {
-        if (playerGoal == null)
+        if (playerGoal == null) return;
+
+        if (isStunned)
         {
+            // drift toward enemy goal while stunned
+            stunTimer -= Time.deltaTime;
+            if (stunTimer <= 0f)
+            {
+                isStunned = false;
+            }
+            else if (enemyGoal != null)
+            {
+                Vector3 retreatDirection = (enemyGoal.transform.position - transform.position).normalized;
+                enemyRb.AddForce(retreatDirection * stunSpeed * Time.deltaTime);
+            }
             return;
         }
 
-        // Set enemy direction towards player goal and move there
+        // normal: move toward player goal
         Vector3 lookDirection = (playerGoal.transform.position - transform.position).normalized;
         enemyRb.AddForce(lookDirection * speed * Time.deltaTime);
-
     }
 
     private void OnCollisionEnter(Collision other)
@@ -59,6 +83,19 @@ public class EnemyX : MonoBehaviour
             }
             Destroy(gameObject);
         }
+        else if (other.gameObject.CompareTag("Player"))
+        {
+            Stun();
+        }
     }
 
+    // blue sphere gizmo when stunned (only visible with Gizmos enabled in Scene/Game view)
+    void OnDrawGizmos()
+    {
+        if (isStunned)
+        {
+            Gizmos.color = new Color(0f, 0.5f, 1f, 0.5f);
+            Gizmos.DrawSphere(transform.position, 1.5f);
+        }
+    }
 }

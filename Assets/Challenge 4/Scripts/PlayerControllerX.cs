@@ -357,6 +357,10 @@ public class PlayerControllerX : MonoBehaviour
                     force.y = forceMagnitude * 0.5f;
 
                     enemyRb.AddForce(force, ForceMode.Impulse);
+
+                    // stun so they drift toward their own goal
+                    EnemyX enemy = col.GetComponent<EnemyX>();
+                    if (enemy != null) enemy.Stun();
                 }
             }
         }

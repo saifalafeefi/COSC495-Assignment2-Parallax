@@ -155,3 +155,5 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::EnemyX
   speed: 100
   playerGoal: {fileID: 0}
+  stunSpeed: 250
+  stunDuration: 2
