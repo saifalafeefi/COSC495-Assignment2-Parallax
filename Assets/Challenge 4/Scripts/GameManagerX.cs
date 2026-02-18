@@ -16,6 +16,7 @@ public class GameManagerX : MonoBehaviour
     public TextMeshProUGUI livesText;
     public TextMeshProUGUI scoreText;
     public TextMeshProUGUI waveText;
+    public TextMeshProUGUI waveTimerText; // "Next wave in X..." countdown
 
     [Header("Pause")]
     public GameObject pausePanel;
@@ -94,6 +95,16 @@ public class GameManagerX : MonoBehaviour
     {
         currentWave = wave;
         UpdateHUD();
+    }
+
+    // show/hide the "Next wave in X..." text
+    public void SetWaveTimer(string text)
+    {
+        if (waveTimerText != null)
+        {
+            waveTimerText.text = text;
+            waveTimerText.gameObject.SetActive(!string.IsNullOrEmpty(text));
+        }
     }
 
     void UpdateHUD()

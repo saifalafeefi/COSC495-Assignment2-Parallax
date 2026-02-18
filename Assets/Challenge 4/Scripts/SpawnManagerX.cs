@@ -1,12 +1,13 @@
-﻿using System.Collections;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
 public class SpawnManagerX : MonoBehaviour
 {
     public GameObject enemyPrefab;
-    public GameObject powerupPrefab;
+    public GameObject knockbackPowerupPrefab;
     public GameObject smashPowerupPrefab;
+    public GameObject shieldPowerupPrefab;
 
     private float spawnRangeX = 10;
     private float spawnZMin = 15;
@@ -14,8 +15,10 @@ public class SpawnManagerX : MonoBehaviour
 
     public int enemyCount;
     public int waveCount = 1;
+    public float waveCooldown = 3f; // seconds between waves
 
-    private bool spawnSmashNext = false; // toggles which powerup type spawns next
+    private int powerupCycle = 0; // cycles through: 0=knockback, 1=smash, 2=shield
+    private bool isCountingDown;
 
     public GameObject player;
     private Vector3 playerStartPos; // saved at start so player resets independently
@@ -36,10 +39,35 @@ public class SpawnManagerX : MonoBehaviour
 
         enemyCount = GameObject.FindGameObjectsWithTag("Enemy").Length;
 
-        if (enemyCount == 0)
+        if (enemyCount == 0 && !isCountingDown)
         {
-            SpawnEnemyWave(waveCount);
+            StartCoroutine(WaveCountdown());
         }
+    }
+
+    // countdown before next wave, shows timer text on screen
+    IEnumerator WaveCountdown()
+    {
+        isCountingDown = true;
+
+        // show "Wave Clear!" briefly then countdown
+        if (GameManagerX.Instance != null)
+            GameManagerX.Instance.SetWaveTimer("Wave Clear!");
+
+        float remaining = waveCooldown;
+        while (remaining > 0f)
+        {
+            if (GameManagerX.Instance != null)
+                GameManagerX.Instance.SetWaveTimer("Next wave in " + Mathf.CeilToInt(remaining) + "...");
+            remaining -= Time.deltaTime;
+            yield return null;
+        }
+
+        if (GameManagerX.Instance != null)
+            GameManagerX.Instance.SetWaveTimer("");
+
+        SpawnEnemyWave(waveCount);
+        isCountingDown = false;
     }
 
     // random position relative to the spawn manager's position
@@ -52,22 +80,29 @@ public class SpawnManagerX : MonoBehaviour
 
     void SpawnEnemyWave(int enemiesToSpawn)
     {
-        // spawn a powerup if none exist, alternating type each wave
-        // uses the prefab's own transform.position as offset so you can adjust it per prefab
-        bool hasRegularPowerup = GameObject.FindGameObjectsWithTag("KnockbackPowerup").Length > 0;
-        bool hasSmashPowerup = GameObject.FindGameObjectsWithTag("SmashPowerup").Length > 0;
+        // spawn a powerup if none exist, cycling: knockback → smash → shield
+        bool hasKnockback = GameObject.FindGameObjectsWithTag("KnockbackPowerup").Length > 0;
+        bool hasSmash = GameObject.FindGameObjectsWithTag("SmashPowerup").Length > 0;
+        bool hasShield = GameObject.FindGameObjectsWithTag("ShieldPowerup").Length > 0;
 
-        if (!hasRegularPowerup && !hasSmashPowerup)
+        if (!hasKnockback && !hasSmash && !hasShield)
         {
-            if (spawnSmashNext && smashPowerupPrefab != null)
-            {
-                Instantiate(smashPowerupPrefab, GenerateSpawnPosition() + smashPowerupPrefab.transform.position, smashPowerupPrefab.transform.rotation);
-            }
-            else
-            {
-                Instantiate(powerupPrefab, GenerateSpawnPosition() + powerupPrefab.transform.position, powerupPrefab.transform.rotation);
-            }
-            spawnSmashNext = !spawnSmashNext;
+            GameObject prefab = null;
+            if (powerupCycle == 0 && knockbackPowerupPrefab != null)
+                prefab = knockbackPowerupPrefab;
+            else if (powerupCycle == 1 && smashPowerupPrefab != null)
+                prefab = smashPowerupPrefab;
+            else if (powerupCycle == 2 && shieldPowerupPrefab != null)
+                prefab = shieldPowerupPrefab;
+
+            // fallback to knockback if the selected prefab isn't assigned
+            if (prefab == null && knockbackPowerupPrefab != null)
+                prefab = knockbackPowerupPrefab;
+
+            if (prefab != null)
+                Instantiate(prefab, GenerateSpawnPosition() + prefab.transform.position, prefab.transform.rotation);
+
+            powerupCycle = (powerupCycle + 1) % 3;
         }
 
         // spawn enemies based on wave number, offset by enemy prefab's transform

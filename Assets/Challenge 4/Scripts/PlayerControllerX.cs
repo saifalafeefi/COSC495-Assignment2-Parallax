@@ -10,8 +10,9 @@ public class PlayerControllerX : MonoBehaviour
     public float maxSpeed = 20f; // top speed the player can reach
     private GameObject focalPoint;
     public float brakingFactor = 5f; // how fast you stop when changing direction
+    public float gravityMultiplier = 2.5f; // extra gravity so the ball doesn't feel floaty
 
-    public bool hasPowerup;
+    public int knockbackStacks;
     public GameObject powerupIndicator;
     public int powerUpDuration = 5;
     public float turboStrength = 15.0f;
@@ -20,9 +21,10 @@ public class PlayerControllerX : MonoBehaviour
     private float normalStrength = 10; // normal knockback
     private float powerupStrength = 25; // boosted knockback
     private Coroutine knockbackCoroutine; // tracked so we can reset the timer on re-pickup
+    public Vector3 knockbackStackMultiplier = Vector3.one; // scales stackSpacing for this powerup
 
     // smash powerup
-    public bool hasSmashPowerup;
+    public int smashPowerupStacks;
     private bool isSmashing;
     private bool isGrounded;
     public GameObject smashPowerupIndicator;
@@ -30,6 +32,26 @@ public class PlayerControllerX : MonoBehaviour
     public float smashRadius = 15f;
     public float maxSmashForce = 50f;
     public float minSmashForce = 10f;
+    public Vector3 smashStackMultiplier = Vector3.one; // scales stackSpacing for this powerup
+
+    // shield powerup
+    public int shieldStacks;
+    public GameObject shieldIndicator;
+    public float shieldRadius = 4f;       // how far the shield reaches
+    public int shieldMaxHits = 3;         // enemies destroyed before shield breaks
+    public float shieldShrinkDuration = 0.4f; // how long enemies shrink before vanishing
+    private int shieldHitsRemaining;
+    public Vector3 shieldStackMultiplier = new Vector3(0.3f, 0.3f, 0.3f); // scales stackSpacing for this powerup
+
+    // stacking visuals — each stack spawns a slightly larger copy of the indicator
+    // X/Z = scale growth per stack, Y = vertical position offset per stack
+    public Vector3 stackSpacing = new Vector3(0.3f, 0.15f, 0.3f);
+    private List<GameObject> knockbackIndicators = new List<GameObject>();
+    private List<GameObject> smashIndicators = new List<GameObject>();
+    private List<GameObject> shieldIndicators = new List<GameObject>();
+    private Vector3 knockbackIndicatorBaseScale;
+    private Vector3 smashIndicatorBaseScale;
+    private Vector3 shieldIndicatorBaseScale;
 
     // smash aiming system
     public GameObject landingIndicator;
@@ -65,6 +87,14 @@ public class PlayerControllerX : MonoBehaviour
             turboParticle.Stop();
         }
 
+        // save base scales for cloning extra stacks later
+        if (powerupIndicator != null)
+            knockbackIndicatorBaseScale = powerupIndicator.transform.lossyScale;
+        if (smashPowerupIndicator != null)
+            smashIndicatorBaseScale = smashPowerupIndicator.transform.lossyScale;
+        if (shieldIndicator != null)
+            shieldIndicatorBaseScale = new Vector3(shieldRadius * 2f, shieldRadius * 2f, shieldRadius * 2f);
+
         // smash aiming setup
         cameraRotator = focalPoint.GetComponent<RotateCameraX>();
         shoulderShift = FindObjectOfType<CameraShoulderShift>();
@@ -88,6 +118,15 @@ public class PlayerControllerX : MonoBehaviour
         aimLine.enabled = false;
     }
 
+    void FixedUpdate()
+    {
+        // apply extra gravity so the ball falls snappier
+        if (playerRb.useGravity && !isGrounded)
+        {
+            playerRb.AddForce(Physics.gravity * (gravityMultiplier - 1f), ForceMode.Acceleration);
+        }
+    }
+
     void Update()
     {
         // always check ground state
@@ -98,7 +137,7 @@ public class PlayerControllerX : MonoBehaviour
         {
             diveRequested = true;
         }
-        else if (Input.GetKeyDown(KeyCode.F) && hasSmashPowerup && !isSmashing && isGrounded)
+        else if (Input.GetKeyDown(KeyCode.F) && smashPowerupStacks > 0 && !isSmashing)
         {
             StartCoroutine(PerformSmashAttack());
         }
@@ -159,49 +198,195 @@ public class PlayerControllerX : MonoBehaviour
             }
         }
 
-        // keep indicators under the player
-        powerupIndicator.transform.position = transform.position + new Vector3(0, -0.6f, 0);
+        // position originals + extra clones under the player (Y = vertical offset per stack)
+        Vector3 indicatorPos = transform.position + new Vector3(0, -0.6f, 0);
+
+        if (powerupIndicator != null)
+            powerupIndicator.transform.position = indicatorPos;
+        for (int i = 0; i < knockbackIndicators.Count; i++)
+            if (knockbackIndicators[i] != null)
+                knockbackIndicators[i].transform.position = indicatorPos + new Vector3(0, (i + 1) * stackSpacing.y * knockbackStackMultiplier.y, 0);
 
         if (smashPowerupIndicator != null)
+            smashPowerupIndicator.transform.position = indicatorPos;
+        for (int i = 0; i < smashIndicators.Count; i++)
+            if (smashIndicators[i] != null)
+                smashIndicators[i].transform.position = indicatorPos + new Vector3(0, (i + 1) * stackSpacing.y * smashStackMultiplier.y, 0);
+
+        if (shieldIndicator != null)
         {
-            smashPowerupIndicator.transform.position = transform.position + new Vector3(0, -0.6f, 0);
+            shieldIndicator.transform.position = transform.position;
+            float diameter = shieldRadius * 2f;
+            shieldIndicator.transform.localScale = new Vector3(diameter, diameter, diameter);
+        }
+        for (int i = 0; i < shieldIndicators.Count; i++)
+            if (shieldIndicators[i] != null)
+                shieldIndicators[i].transform.position = transform.position + new Vector3(0, (i + 1) * stackSpacing.y * shieldStackMultiplier.y, 0);
+
+        // shield: vaporize enemies that get too close
+        if (shieldStacks > 0)
+        {
+            Collider[] nearby = Physics.OverlapSphere(transform.position, shieldRadius);
+            foreach (Collider col in nearby)
+            {
+                if (col.CompareTag("Enemy"))
+                {
+                    if (GameManagerX.Instance != null)
+                    {
+                        GameManagerX.Instance.EnemyScored();
+                    }
+
+                    // untag so it won't be detected again, disable AI, then shrink away
+                    col.gameObject.tag = "Untagged";
+                    EnemyX enemyAI = col.GetComponent<EnemyX>();
+                    if (enemyAI != null) enemyAI.enabled = false;
+                    Rigidbody enemyRb = col.GetComponent<Rigidbody>();
+                    if (enemyRb != null) enemyRb.isKinematic = true;
+                    StartCoroutine(ShrinkAndDestroy(col.gameObject, shieldShrinkDuration));
+
+                    shieldHitsRemaining--;
+                    if (shieldHitsRemaining <= 0)
+                    {
+                        shieldStacks--;
+                        if (shieldStacks <= 0)
+                        {
+                            shieldStacks = 0;
+                            ClearExtraIndicators(shieldIndicators);
+                            if (shieldIndicator != null) shieldIndicator.SetActive(false);
+                            break;
+                        }
+                        else
+                        {
+                            RemoveExtraIndicator(shieldIndicators);
+                            shieldHitsRemaining = shieldMaxHits;
+                        }
+                    }
+                }
+            }
         }
     }
 
-    // pick up powerups on contact
+    // pick up powerups on contact — all powerups stack
     private void OnTriggerEnter(Collider other)
     {
         if (other.gameObject.CompareTag("KnockbackPowerup"))
         {
             Destroy(other.gameObject);
-            hasPowerup = true;
-            powerupIndicator.SetActive(true);
+            knockbackStacks++;
 
-            // cancel old timer if picking up another knockback while one is active
+            if (knockbackStacks == 1)
+                powerupIndicator.SetActive(true);   // first stack = show original
+            else
+                SpawnExtraIndicator(powerupIndicator, knockbackIndicatorBaseScale, knockbackIndicators, false, knockbackStackMultiplier);
+
+            // restart the timer on each pickup
             if (knockbackCoroutine != null)
-            {
                 StopCoroutine(knockbackCoroutine);
-            }
             knockbackCoroutine = StartCoroutine(PowerupCooldown());
         }
 
         if (other.gameObject.CompareTag("SmashPowerup"))
         {
             Destroy(other.gameObject);
-            hasSmashPowerup = true;
-            if (smashPowerupIndicator != null)
+            smashPowerupStacks++;
+
+            if (smashPowerupStacks == 1)
             {
-                smashPowerupIndicator.SetActive(true);
+                if (smashPowerupIndicator != null) smashPowerupIndicator.SetActive(true);
             }
+            else
+                SpawnExtraIndicator(smashPowerupIndicator, smashIndicatorBaseScale, smashIndicators, false, smashStackMultiplier);
+        }
+
+        if (other.gameObject.CompareTag("ShieldPowerup"))
+        {
+            Destroy(other.gameObject);
+            shieldStacks++;
+            if (shieldStacks == 1 || shieldHitsRemaining <= 0)
+                shieldHitsRemaining = shieldMaxHits;
+
+            if (shieldStacks == 1)
+            {
+                if (shieldIndicator != null) shieldIndicator.SetActive(true);
+            }
+            else
+                SpawnExtraIndicator(shieldIndicator, shieldIndicatorBaseScale, shieldIndicators, true, shieldStackMultiplier);
         }
     }
 
-    // regular powerup wears off after a few seconds
+    // spawn an extra indicator clone for stacks beyond the first (bigger each time)
+    void SpawnExtraIndicator(GameObject template, Vector3 baseWorldScale, List<GameObject> list, bool scaleAllAxes, Vector3 multiplier)
+    {
+        if (template == null) return;
+
+        GameObject copy = Instantiate(template, template.transform.position, template.transform.rotation, template.transform.parent);
+        copy.SetActive(true);
+
+        // apply per-powerup multiplier to the shared stackSpacing
+        int step = list.Count + 1;
+        float scaleX = step * stackSpacing.x * multiplier.x;
+        float scaleZ = step * stackSpacing.z * multiplier.z;
+        if (scaleAllAxes)
+        {
+            float scaleY = step * stackSpacing.x * multiplier.y;
+            copy.transform.localScale = template.transform.localScale + new Vector3(scaleX, scaleY, scaleZ);
+        }
+        else
+            copy.transform.localScale = template.transform.localScale + new Vector3(scaleX, 0, scaleZ);
+
+        list.Add(copy);
+    }
+
+    // remove the largest (last) extra indicator clone
+    void RemoveExtraIndicator(List<GameObject> list)
+    {
+        if (list.Count == 0) return;
+        int last = list.Count - 1;
+        if (list[last] != null) Destroy(list[last]);
+        list.RemoveAt(last);
+    }
+
+    // destroy all extra indicator clones
+    void ClearExtraIndicators(List<GameObject> list)
+    {
+        foreach (GameObject ind in list)
+            if (ind != null) Destroy(ind);
+        list.Clear();
+    }
+
+    // knockback wears off one stack at a time
     IEnumerator PowerupCooldown()
     {
         yield return new WaitForSeconds(powerUpDuration);
-        hasPowerup = false;
-        powerupIndicator.SetActive(false);
+        knockbackStacks--;
+        if (knockbackStacks <= 0)
+        {
+            knockbackStacks = 0;
+            ClearExtraIndicators(knockbackIndicators);
+            if (powerupIndicator != null) powerupIndicator.SetActive(false);
+        }
+        else
+        {
+            RemoveExtraIndicator(knockbackIndicators);
+        }
+    }
+
+    // shrink enemy down to nothing then destroy it
+    IEnumerator ShrinkAndDestroy(GameObject target, float duration)
+    {
+        Vector3 startScale = target.transform.localScale;
+        float elapsed = 0f;
+
+        while (elapsed < duration)
+        {
+            if (target == null) yield break;
+            elapsed += Time.deltaTime;
+            float t = elapsed / duration;
+            target.transform.localScale = Vector3.Lerp(startScale, Vector3.zero, t);
+            yield return null;
+        }
+
+        if (target != null) Destroy(target);
     }
 
     // 5-phase smash: launch → auto-aim → slow-mo aiming → dive → impact
@@ -315,11 +500,17 @@ public class PlayerControllerX : MonoBehaviour
         Time.fixedDeltaTime = originalFixedDeltaTime;
         ApplySmashImpact();
 
-        // one-time use, consume it
-        hasSmashPowerup = false;
-        if (smashPowerupIndicator != null)
+        // consume one stack
+        smashPowerupStacks--;
+        if (smashPowerupStacks <= 0)
         {
-            smashPowerupIndicator.SetActive(false);
+            smashPowerupStacks = 0;
+            ClearExtraIndicators(smashIndicators);
+            if (smashPowerupIndicator != null) smashPowerupIndicator.SetActive(false);
+        }
+        else
+        {
+            RemoveExtraIndicator(smashIndicators);
         }
         if (landingIndicator != null)
         {
@@ -419,7 +610,7 @@ public class PlayerControllerX : MonoBehaviour
             Rigidbody enemyRigidbody = other.gameObject.GetComponent<Rigidbody>();
             Vector3 awayFromPlayer = (other.gameObject.transform.position - transform.position).normalized;
 
-            if (hasPowerup)
+            if (knockbackStacks > 0)
             {
                 enemyRigidbody.AddForce(awayFromPlayer * powerupStrength, ForceMode.Impulse);
             }
