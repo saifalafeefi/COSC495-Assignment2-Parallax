@@ -17,6 +17,7 @@ public class PlayerControllerX : MonoBehaviour
     public int powerUpDuration = 5;
     public float turboStrength = 15.0f;
     public ParticleSystem turboParticle;
+    private Vector3 lastMoveDirection;
 
     private float normalStrength = 10; // normal knockback
     private float powerupStrength = 25; // boosted knockback
@@ -93,6 +94,10 @@ public class PlayerControllerX : MonoBehaviour
     {
         playerRb = GetComponent<Rigidbody>();
         focalPoint = GameObject.Find("Focal Point");
+        lastMoveDirection = transform.forward;
+        lastMoveDirection.y = 0f;
+        if (lastMoveDirection.sqrMagnitude < 0.001f) lastMoveDirection = Vector3.forward;
+        lastMoveDirection.Normalize();
 
         // fallback: grab particle from focal point if not assigned
         if (turboParticle == null)
@@ -192,6 +197,11 @@ public class PlayerControllerX : MonoBehaviour
             Vector3 flatForward = new Vector3(focalPoint.transform.forward.x, 0, focalPoint.transform.forward.z).normalized;
             Vector3 flatRight = new Vector3(focalPoint.transform.right.x, 0, focalPoint.transform.right.z).normalized;
             Vector3 moveDirection = flatForward * verticalInput + flatRight * horizontalInput;
+            if (moveDirection.sqrMagnitude > 0.001f)
+            {
+                moveDirection.Normalize();
+                lastMoveDirection = moveDirection;
+            }
 
             // brake hard when changing direction, so movement feels snappy
             Vector3 flatVelocity = new Vector3(playerRb.linearVelocity.x, 0, playerRb.linearVelocity.z);
@@ -209,10 +219,18 @@ public class PlayerControllerX : MonoBehaviour
             float speedFactor = Mathf.Clamp01(1f - currentSpeed / maxSpeed);
             playerRb.AddForce(moveDirection * speed * speedFactor, ForceMode.Force);
 
-            // turbo boost on spacebar
-            if (Input.GetKeyDown(KeyCode.Space))
+            // turbo boost on shift, along current movement direction (not camera forward)
+            if (Input.GetKeyDown(KeyCode.LeftShift) || Input.GetKeyDown(KeyCode.RightShift))
             {
-                playerRb.AddForce(focalPoint.transform.forward * turboStrength, ForceMode.Impulse);
+                Vector3 dashDirection = Vector3.zero;
+                if (moveDirection.sqrMagnitude > 0.001f)
+                    dashDirection = moveDirection;
+                else if (flatVelocity.sqrMagnitude > 0.001f)
+                    dashDirection = flatVelocity.normalized;
+                else
+                    dashDirection = lastMoveDirection;
+
+                playerRb.AddForce(dashDirection * turboStrength, ForceMode.Impulse);
 
                 if (turboParticle != null)
                 {
