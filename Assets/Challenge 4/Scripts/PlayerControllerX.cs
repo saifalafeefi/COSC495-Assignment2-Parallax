@@ -43,15 +43,33 @@ public class PlayerControllerX : MonoBehaviour
     private int shieldHitsRemaining;
     public Vector3 shieldStackMultiplier = new Vector3(0.3f, 0.3f, 0.3f); // scales stackSpacing for this powerup
 
+    // giant powerup
+    public int giantStacks;
+    public GameObject giantPowerupIndicator;
+    public float giantScale = 2f;              // how big the player gets
+    public float giantDuration = 10f;          // how long the player stays giant
+    public float giantShrinkBackDuration = 3f; // how long shrink-back takes
+    public float squishDuration = 1f;          // how long enemies flatten
+    public float squishGroundOffset = 0.03f;   // vertical offset above detected ground for squished enemies
+    public Vector3 giantStackMultiplier = Vector3.one;
+    private Vector3 originalPlayerScale;
+    private bool isGiant;
+    private bool isShrinkingBack;
+    private Vector3 shrinkBackStartScale;
+    private float shrinkBackElapsed;
+    private Coroutine giantCoroutine;
+
     // stacking visuals — each stack spawns a slightly larger copy of the indicator
     // X/Z = scale growth per stack, Y = vertical position offset per stack
     public Vector3 stackSpacing = new Vector3(0.3f, 0.15f, 0.3f);
     private List<GameObject> knockbackIndicators = new List<GameObject>();
     private List<GameObject> smashIndicators = new List<GameObject>();
     private List<GameObject> shieldIndicators = new List<GameObject>();
+    private List<GameObject> giantIndicators = new List<GameObject>();
     private Vector3 knockbackIndicatorBaseScale;
     private Vector3 smashIndicatorBaseScale;
     private Vector3 shieldIndicatorBaseScale;
+    private Vector3 giantIndicatorBaseScale;
 
     // smash aiming system
     public GameObject landingIndicator;
@@ -94,6 +112,11 @@ public class PlayerControllerX : MonoBehaviour
             smashIndicatorBaseScale = smashPowerupIndicator.transform.lossyScale;
         if (shieldIndicator != null)
             shieldIndicatorBaseScale = new Vector3(shieldRadius * 2f, shieldRadius * 2f, shieldRadius * 2f);
+        if (giantPowerupIndicator != null)
+            giantIndicatorBaseScale = giantPowerupIndicator.transform.lossyScale;
+
+        // save original player scale for giant powerup
+        originalPlayerScale = transform.localScale;
 
         // smash aiming setup
         cameraRotator = focalPoint.GetComponent<RotateCameraX>();
@@ -198,6 +221,20 @@ public class PlayerControllerX : MonoBehaviour
             }
         }
 
+        // giant shrink-back: lerp player scale back to normal
+        if (isShrinkingBack)
+        {
+            shrinkBackElapsed += Time.deltaTime;
+            float t = shrinkBackElapsed / giantShrinkBackDuration;
+            transform.localScale = Vector3.Lerp(shrinkBackStartScale, originalPlayerScale, t);
+            if (t >= 1f)
+            {
+                transform.localScale = originalPlayerScale;
+                isShrinkingBack = false;
+                isGiant = false;
+            }
+        }
+
         // position originals + extra clones under the player (Y = vertical offset per stack)
         Vector3 indicatorPos = transform.position + new Vector3(0, -0.6f, 0);
 
@@ -222,6 +259,41 @@ public class PlayerControllerX : MonoBehaviour
         for (int i = 0; i < shieldIndicators.Count; i++)
             if (shieldIndicators[i] != null)
                 shieldIndicators[i].transform.position = transform.position + new Vector3(0, (i + 1) * stackSpacing.y * shieldStackMultiplier.y, 0);
+
+        if (giantPowerupIndicator != null)
+            giantPowerupIndicator.transform.position = indicatorPos;
+        for (int i = 0; i < giantIndicators.Count; i++)
+            if (giantIndicators[i] != null)
+                giantIndicators[i].transform.position = indicatorPos + new Vector3(0, (i + 1) * stackSpacing.y * giantStackMultiplier.y, 0);
+
+        // giant: squish enemies on contact (overlap, not collision, so no physics push)
+        if (isGiant)
+        {
+            float giantRadius = transform.localScale.x * 0.5f + 1f; // catch enemies just before they physically collide
+            Collider[] giantHits = Physics.OverlapSphere(transform.position, giantRadius);
+            foreach (Collider c in giantHits)
+            {
+                if (c.CompareTag("Enemy"))
+                {
+                    if (GameManagerX.Instance != null)
+                        GameManagerX.Instance.EnemyScored();
+
+                    c.gameObject.tag = "Untagged";
+                    EnemyX enemyAI = c.GetComponent<EnemyX>();
+                    if (enemyAI != null) enemyAI.enabled = false;
+                    c.enabled = false;
+                    Rigidbody eRb = c.GetComponent<Rigidbody>();
+                    if (eRb != null)
+                    {
+                        eRb.linearVelocity = Vector3.zero;
+                        eRb.angularVelocity = Vector3.zero;
+                        eRb.useGravity = false;
+                        eRb.isKinematic = true;
+                    }
+                    StartCoroutine(SquishAndDestroy(c.gameObject));
+                }
+            }
+        }
 
         // shield: vaporize enemies that get too close
         if (shieldStacks > 0)
@@ -312,6 +384,28 @@ public class PlayerControllerX : MonoBehaviour
             else
                 SpawnExtraIndicator(shieldIndicator, shieldIndicatorBaseScale, shieldIndicators, true, shieldStackMultiplier);
         }
+
+        if (other.gameObject.CompareTag("GiantPowerup"))
+        {
+            Destroy(other.gameObject);
+            giantStacks++;
+
+            if (giantStacks == 1)
+            {
+                if (giantPowerupIndicator != null) giantPowerupIndicator.SetActive(true);
+            }
+            else
+                SpawnExtraIndicator(giantPowerupIndicator, giantIndicatorBaseScale, giantIndicators, false, giantStackMultiplier);
+
+            // grow instantly, reset duration timer
+            transform.localScale = originalPlayerScale * giantScale;
+            isGiant = true;
+            isShrinkingBack = false;
+
+            if (giantCoroutine != null)
+                StopCoroutine(giantCoroutine);
+            giantCoroutine = StartCoroutine(GiantCooldown());
+        }
     }
 
     // spawn an extra indicator clone for stacks beyond the first (bigger each time)
@@ -369,6 +463,66 @@ public class PlayerControllerX : MonoBehaviour
         {
             RemoveExtraIndicator(knockbackIndicators);
         }
+    }
+
+    // giant duration expires, start shrinking back to normal
+    IEnumerator GiantCooldown()
+    {
+        yield return new WaitForSeconds(giantDuration);
+
+        giantStacks--;
+        if (giantStacks <= 0)
+        {
+            giantStacks = 0;
+            ClearExtraIndicators(giantIndicators);
+            if (giantPowerupIndicator != null) giantPowerupIndicator.SetActive(false);
+        }
+        else
+        {
+            RemoveExtraIndicator(giantIndicators);
+        }
+
+        // begin shrink-back lerp (handled in Update)
+        shrinkBackStartScale = transform.localScale;
+        shrinkBackElapsed = 0f;
+        isShrinkingBack = true;
+    }
+
+    // find the ground directly below a squished enemy so flattening always lands on the floor
+    float GetSquishGroundY(GameObject target)
+    {
+        if (target == null) return 0f;
+
+        Vector3 pos = target.transform.position;
+        Vector3 rayOrigin = pos + Vector3.up * 2f;
+
+        if (Physics.Raycast(rayOrigin, Vector3.down, out RaycastHit hit, 50f, ~0, QueryTriggerInteraction.Ignore))
+            return hit.point.y;
+
+        Collider targetCollider = target.GetComponent<Collider>();
+        if (targetCollider != null)
+            return targetCollider.bounds.min.y;
+
+        return pos.y;
+    }
+
+    // sink enemy into the ground and shrink it away
+    IEnumerator SquishAndDestroy(GameObject target)
+    {
+        if (target == null) yield break;
+
+        // parent at ground height so flattened enemy always ends on the floor
+        float groundY = GetSquishGroundY(target);
+        Vector3 targetPos = target.transform.position;
+        GameObject squishParent = new GameObject("SquishParent");
+        squishParent.transform.position = new Vector3(targetPos.x, groundY + squishGroundOffset, targetPos.z);
+        squishParent.transform.rotation = Quaternion.identity;
+        target.transform.SetParent(squishParent.transform, true);
+
+        // instant flatten (no tweening)
+        squishParent.transform.localScale = new Vector3(1f, 0f, 1f);
+        yield return new WaitForSeconds(Mathf.Max(0f, squishDuration));
+        if (squishParent != null) Destroy(squishParent);
     }
 
     // shrink enemy down to nothing then destroy it
@@ -607,6 +761,9 @@ public class PlayerControllerX : MonoBehaviour
 
         if (other.gameObject.CompareTag("Enemy"))
         {
+            // giant handles enemies via OverlapSphere, skip knockback
+            if (isGiant) return;
+
             Rigidbody enemyRigidbody = other.gameObject.GetComponent<Rigidbody>();
             Vector3 awayFromPlayer = (other.gameObject.transform.position - transform.position).normalized;
 

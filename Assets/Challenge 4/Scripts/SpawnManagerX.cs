@@ -8,6 +8,7 @@ public class SpawnManagerX : MonoBehaviour
     public GameObject knockbackPowerupPrefab;
     public GameObject smashPowerupPrefab;
     public GameObject shieldPowerupPrefab;
+    public GameObject giantPowerupPrefab;
 
     private float spawnRangeX = 10;
     private float spawnZMin = 15;
@@ -17,7 +18,7 @@ public class SpawnManagerX : MonoBehaviour
     public int waveCount = 1;
     public float waveCooldown = 3f; // seconds between waves
 
-    private int powerupCycle = 0; // cycles through: 0=knockback, 1=smash, 2=shield
+    private int powerupCycle = 0; // cycles through: 0=knockback, 1=smash, 2=shield, 3=giant
     private bool isCountingDown;
 
     public GameObject player;
@@ -84,8 +85,9 @@ public class SpawnManagerX : MonoBehaviour
         bool hasKnockback = GameObject.FindGameObjectsWithTag("KnockbackPowerup").Length > 0;
         bool hasSmash = GameObject.FindGameObjectsWithTag("SmashPowerup").Length > 0;
         bool hasShield = GameObject.FindGameObjectsWithTag("ShieldPowerup").Length > 0;
+        bool hasGiant = GameObject.FindGameObjectsWithTag("GiantPowerup").Length > 0;
 
-        if (!hasKnockback && !hasSmash && !hasShield)
+        if (!hasKnockback && !hasSmash && !hasShield && !hasGiant)
         {
             GameObject prefab = null;
             if (powerupCycle == 0 && knockbackPowerupPrefab != null)
@@ -94,6 +96,8 @@ public class SpawnManagerX : MonoBehaviour
                 prefab = smashPowerupPrefab;
             else if (powerupCycle == 2 && shieldPowerupPrefab != null)
                 prefab = shieldPowerupPrefab;
+            else if (powerupCycle == 3 && giantPowerupPrefab != null)
+                prefab = giantPowerupPrefab;
 
             // fallback to knockback if the selected prefab isn't assigned
             if (prefab == null && knockbackPowerupPrefab != null)
@@ -102,7 +106,7 @@ public class SpawnManagerX : MonoBehaviour
             if (prefab != null)
                 Instantiate(prefab, GenerateSpawnPosition() + prefab.transform.position, prefab.transform.rotation);
 
-            powerupCycle = (powerupCycle + 1) % 3;
+            powerupCycle = (powerupCycle + 1) % 4;
         }
 
         // spawn enemies based on wave number, offset by enemy prefab's transform

@@ -8,6 +8,7 @@ TagManager:
   - SmashPowerup
   - KnockbackPowerup
   - ShieldPowerup
+  - GiantPowerup
   layers:
   - Default
   - TransparentFX
