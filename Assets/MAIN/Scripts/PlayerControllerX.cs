@@ -19,7 +19,24 @@ public class PlayerControllerX : MonoBehaviour
     private int powerUpDuration = 5;
     public float turboStrength = 15.0f;
     public ParticleSystem turboParticle;
+    public bool enableTurboVfx = true;
+    public int turboSmokeParticles = 8;
+    public float turboSmokeMinSpeed = 1.5f;
+    public float turboSmokeMaxSpeed = 3.5f;
+    public float turboSmokeBackOffset = 0.5f;
+    public float turboSmokeUpOffset = 0.15f;
+    public float turboSmokeConeSpread = 0.35f;
+    public float turboSmokeDuration = 0.6f;
+    public float turboSmokeTickInterval = 0.06f;
     private Vector3 lastMoveDirection;
+    public ParticleSystem smashImpactSmokePrefab;
+    public bool enableSmashImpactSmoke = true;
+    public int smashSmokeMinParticles = 14;
+    public int smashSmokeMaxParticles = 26;
+    public float smashSmokeMinSpeed = 2.5f;
+    public float smashSmokeMaxSpeed = 7.5f;
+    public float smashSmokeSurfaceOffset = 0.08f;
+    public float smashSmokeCornerSpreadBoost = 0.35f;
 
     private float normalStrength = 10; // normal knockback
     private float powerupStrength = 25; // boosted knockback
@@ -89,8 +106,14 @@ public class PlayerControllerX : MonoBehaviour
     private bool isDiving;
     private bool diveCollided;
     private bool diveRequested;
+    private Vector3 lastSmashImpactPoint;
+    private Vector3 lastSmashImpactNormal = Vector3.up;
+    private float lastSmashImpactNormalVariance;
+    private bool hasSmashImpactData;
     private float originalFixedDeltaTime;
     private LineRenderer aimLine;
+    private Coroutine turboSmokeCoroutine;
+    private ParticleSystem runtimeTurboSmokeFx;
 
     void Start()
     {
@@ -101,13 +124,8 @@ public class PlayerControllerX : MonoBehaviour
         if (lastMoveDirection.sqrMagnitude < 0.001f) lastMoveDirection = Vector3.forward;
         lastMoveDirection.Normalize();
 
-        // fallback: grab particle from focal point if not assigned
-        if (turboParticle == null)
-        {
-            turboParticle = focalPoint.GetComponentInChildren<ParticleSystem>(true);
-        }
-
-        if (turboParticle != null)
+        // turbo vfx is opt-in to avoid accidentally playing unrelated particle systems
+        if (enableTurboVfx && turboParticle != null)
         {
             turboParticle.Stop();
         }
@@ -240,10 +258,7 @@ public class PlayerControllerX : MonoBehaviour
 
                 playerRb.AddForce(dashDirection * turboStrength, ForceMode.Impulse);
 
-                if (turboParticle != null)
-                {
-                    turboParticle.Play();
-                }
+                StartTurboSmoke(dashDirection);
             }
         }
 
@@ -683,6 +698,9 @@ public class PlayerControllerX : MonoBehaviour
         // --- Phase 1: Launch ---
         isSmashing = true;
         diveRequested = false;
+        hasSmashImpactData = false;
+        lastSmashImpactNormal = Vector3.up;
+        lastSmashImpactNormalVariance = 0f;
         playerRb.AddForce(Vector3.up * smashJumpForce, ForceMode.Impulse);
 
         // wait for launch duration then transition to aiming
@@ -786,6 +804,7 @@ public class PlayerControllerX : MonoBehaviour
         if (cinemachineBrain != null) cinemachineBrain.IgnoreTimeScale = false;
         Time.timeScale = 1f;
         Time.fixedDeltaTime = originalFixedDeltaTime;
+        SpawnSmashImpactSmoke();
         ApplySmashImpact();
 
         // consume one stack
@@ -845,6 +864,169 @@ public class PlayerControllerX : MonoBehaviour
         }
     }
 
+    void RecordDiveImpact(Collision collision)
+    {
+        int count = collision.contactCount;
+        if (count <= 0)
+        {
+            lastSmashImpactPoint = transform.position;
+            lastSmashImpactNormal = Vector3.up;
+            lastSmashImpactNormalVariance = 0f;
+            hasSmashImpactData = true;
+            return;
+        }
+
+        Vector3 avgPoint = Vector3.zero;
+        Vector3 avgNormal = Vector3.zero;
+        float variance = 0f;
+
+        for (int i = 0; i < count; i++)
+        {
+            ContactPoint contact = collision.GetContact(i);
+            avgPoint += contact.point;
+            avgNormal += contact.normal;
+        }
+
+        avgPoint /= count;
+        avgNormal = avgNormal.normalized;
+        if (avgNormal.sqrMagnitude < 0.001f) avgNormal = Vector3.up;
+
+        for (int i = 0; i < count; i++)
+        {
+            float angle = Vector3.Angle(avgNormal, collision.GetContact(i).normal);
+            if (angle > variance) variance = angle;
+        }
+
+        lastSmashImpactPoint = avgPoint;
+        lastSmashImpactNormal = avgNormal;
+        lastSmashImpactNormalVariance = variance;
+        hasSmashImpactData = true;
+    }
+
+    void SpawnSmashImpactSmoke()
+    {
+        if (!enableSmashImpactSmoke) return;
+        if (smashImpactSmokePrefab == null) return;
+
+        Vector3 impactPoint = hasSmashImpactData ? lastSmashImpactPoint : transform.position;
+        Vector3 impactNormal = hasSmashImpactData ? lastSmashImpactNormal : Vector3.up;
+        impactNormal.Normalize();
+
+        float cornerFactor = Mathf.InverseLerp(0f, 45f, lastSmashImpactNormalVariance);
+        float spread = Mathf.Clamp01(0.45f + cornerFactor * smashSmokeCornerSpreadBoost);
+        int particleCount = Mathf.RoundToInt(Mathf.Lerp(smashSmokeMinParticles, smashSmokeMaxParticles, 0.5f + cornerFactor * 0.5f));
+        particleCount = Mathf.Max(1, particleCount);
+        // build a tangent basis from the impact normal so smoke expands across the surface plane
+        Vector3 tangentA = Vector3.Cross(impactNormal, Mathf.Abs(impactNormal.y) > 0.98f ? Vector3.forward : Vector3.up).normalized;
+        Vector3 tangentB = Vector3.Cross(impactNormal, tangentA).normalized;
+
+        ParticleSystem smoke = Instantiate(
+            smashImpactSmokePrefab,
+            impactPoint + impactNormal * smashSmokeSurfaceOffset,
+            Quaternion.LookRotation(impactNormal)
+        );
+
+        // force one-shot burst behavior so this never runs as a continuous loop
+        var main = smoke.main;
+        main.loop = false;
+        var emission = smoke.emission;
+        emission.enabled = false;
+
+        smoke.Clear(true);
+        ParticleSystem.EmitParams emit = new ParticleSystem.EmitParams();
+        emit.applyShapeToPosition = true;
+
+        for (int i = 0; i < particleCount; i++)
+        {
+            float angle = Random.Range(0f, Mathf.PI * 2f);
+            Vector3 planeDir = (Mathf.Cos(angle) * tangentA + Mathf.Sin(angle) * tangentB).normalized;
+
+            // keep jitter on the impact plane so smoke doesn't bias upward
+            Vector2 jitter2D = Random.insideUnitCircle * spread * 0.35f;
+            Vector3 jitter = tangentA * jitter2D.x + tangentB * jitter2D.y;
+            Vector3 emitDir = (planeDir + jitter).normalized;
+            emit.velocity = emitDir * Random.Range(smashSmokeMinSpeed, smashSmokeMaxSpeed);
+            smoke.Emit(emit, 1);
+        }
+
+        smoke.Play();
+        Destroy(smoke.gameObject, 3f);
+    }
+
+    void StartTurboSmoke(Vector3 dashDirection)
+    {
+        if (!enableTurboVfx) return;
+
+        if (turboSmokeCoroutine != null)
+            StopCoroutine(turboSmokeCoroutine);
+        turboSmokeCoroutine = StartCoroutine(TurboSmokeRoutine(dashDirection));
+    }
+
+    IEnumerator TurboSmokeRoutine(Vector3 initialDashDirection)
+    {
+        float duration = Mathf.Max(0f, turboSmokeDuration);
+        float tick = Mathf.Max(0.01f, turboSmokeTickInterval);
+        float elapsed = 0f;
+        bool clearFirst = true;
+
+        while (elapsed < duration)
+        {
+            Vector3 currentDirection = initialDashDirection;
+            Vector3 flatVelocity = new Vector3(playerRb.linearVelocity.x, 0f, playerRb.linearVelocity.z);
+            if (flatVelocity.sqrMagnitude > 0.001f)
+                currentDirection = flatVelocity.normalized;
+            else if (lastMoveDirection.sqrMagnitude > 0.001f)
+                currentDirection = lastMoveDirection;
+
+            EmitTurboSmokeBurst(currentDirection, clearFirst);
+            clearFirst = false;
+            elapsed += tick;
+            yield return new WaitForSeconds(tick);
+        }
+
+        turboSmokeCoroutine = null;
+        if (runtimeTurboSmokeFx != null)
+        {
+            Destroy(runtimeTurboSmokeFx.gameObject, 2.5f);
+            runtimeTurboSmokeFx = null;
+        }
+    }
+
+    void EmitTurboSmokeBurst(Vector3 dashDirection, bool clearBeforeEmit)
+    {
+        if (!enableTurboVfx) return;
+
+        Vector3 backDir = -dashDirection.normalized;
+        if (backDir.sqrMagnitude < 0.001f) backDir = -transform.forward;
+        Vector3 spawnPos = transform.position + backDir * turboSmokeBackOffset + Vector3.up * turboSmokeUpOffset;
+
+        ParticleSystem turboFx = turboParticle;
+
+        // if turbo is unset (or set to a prefab asset), spawn/reuse a runtime smoke instance
+        if (turboFx == null || !turboFx.gameObject.scene.IsValid())
+        {
+            if (smashImpactSmokePrefab == null) return;
+            if (runtimeTurboSmokeFx == null)
+                runtimeTurboSmokeFx = Instantiate(smashImpactSmokePrefab, spawnPos, Quaternion.LookRotation(backDir));
+            turboFx = runtimeTurboSmokeFx;
+        }
+        turboFx.transform.position = spawnPos;
+
+        if (clearBeforeEmit)
+            turboFx.Clear(true);
+
+        ParticleSystem.EmitParams emit = new ParticleSystem.EmitParams();
+        int count = Mathf.Max(1, turboSmokeParticles);
+        for (int i = 0; i < count; i++)
+        {
+            Vector3 randomDir = (backDir + Random.insideUnitSphere * turboSmokeConeSpread).normalized;
+            emit.velocity = randomDir * Random.Range(turboSmokeMinSpeed, turboSmokeMaxSpeed);
+            turboFx.Emit(emit, 1);
+        }
+
+        turboFx.Play();
+    }
+
     // find the closest enemy to the player (for auto-aim at apex)
     Transform FindClosestEnemy()
     {
@@ -868,6 +1050,17 @@ public class PlayerControllerX : MonoBehaviour
     // safety: restore timeScale and camera if player is destroyed mid-smash
     void OnDisable()
     {
+        if (turboSmokeCoroutine != null)
+        {
+            StopCoroutine(turboSmokeCoroutine);
+            turboSmokeCoroutine = null;
+        }
+        if (runtimeTurboSmokeFx != null)
+        {
+            Destroy(runtimeTurboSmokeFx.gameObject);
+            runtimeTurboSmokeFx = null;
+        }
+
         if (Time.timeScale != 1f)
         {
             Time.timeScale = 1f;
@@ -891,6 +1084,7 @@ public class PlayerControllerX : MonoBehaviour
         if (isDiving)
         {
             diveCollided = true;
+            RecordDiveImpact(other);
         }
 
         if (other.gameObject.CompareTag("Enemy"))
