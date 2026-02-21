@@ -12,6 +12,7 @@ GameObject:
   - component: {fileID: 451574921753729301}
   - component: {fileID: 3257094721889730803}
   - component: {fileID: 3345887435817295244}
+  - component: {fileID: 2647114477062421440}
   m_Layer: 0
   m_Name: GiantPowerup
   m_TagString: GiantPowerup
@@ -112,3 +113,22 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 0.528658, y: 0.43810678, z: 0.4578313}
   m_Center: {x: 0, y: -0.000000022351742, z: 0}
+--- !u!114 &2647114477062421440
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3371235027557621906}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6956c332d87e46ec9ff9f286b6ef4c2c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::GiantPowerupPickup
+  giantScale: 2
+  giantDuration: 10
+  giantShrinkBackDuration: 3
+  squishDuration: 1
+  squishGroundOffset: 0.03
+  indicatorPrefab: {fileID: 0}
+  stackMultiplier: {x: 1, y: 1, z: 1}

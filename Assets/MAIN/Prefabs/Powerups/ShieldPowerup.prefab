@@ -12,6 +12,7 @@ GameObject:
   - component: {fileID: 2866944527552289600}
   - component: {fileID: 7666826173991891568}
   - component: {fileID: 3685951050505742028}
+  - component: {fileID: 5982490396034587001}
   m_Layer: 0
   m_Name: ShieldPowerup
   m_TagString: ShieldPowerup
@@ -112,3 +113,20 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 0.528658, y: 0.43810678, z: 0.4578313}
   m_Center: {x: 0, y: -0.000000022351742, z: 0}
+--- !u!114 &5982490396034587001
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 399236642687032647}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: efd4c06c1d934040b96d761b687f0f7a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ShieldPowerupPickup
+  shieldRadius: 2
+  shieldMaxHits: 3
+  shieldShrinkDuration: 0.4
+  indicatorPrefab: {fileID: 7842757725540822130, guid: 2c85289f5e213194092c73672f503e25, type: 3}
+  stackMultiplier: {x: 0.3, y: 0.3, z: 0.3}

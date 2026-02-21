@@ -14,9 +14,9 @@ public class PlayerControllerX : MonoBehaviour
     public float jumpForce = 8f; // upward impulse on jump
     public float groundCheckDistance = 1.5f; // raycast length for grounded check
 
-    public int knockbackStacks;
-    public GameObject powerupIndicator;
-    public int powerUpDuration = 5;
+    private int knockbackStacks;
+    private GameObject powerupIndicator;
+    private int powerUpDuration = 5;
     public float turboStrength = 15.0f;
     public ParticleSystem turboParticle;
     private Vector3 lastMoveDirection;
@@ -24,37 +24,37 @@ public class PlayerControllerX : MonoBehaviour
     private float normalStrength = 10; // normal knockback
     private float powerupStrength = 25; // boosted knockback
     private Coroutine knockbackCoroutine; // tracked so we can reset the timer on re-pickup
-    public Vector3 knockbackStackMultiplier = Vector3.one; // scales stackSpacing for this powerup
+    private Vector3 knockbackStackMultiplier = Vector3.one; // scales stackSpacing for this powerup
 
     // smash powerup
-    public int smashPowerupStacks;
+    private int smashPowerupStacks;
     private bool isSmashing;
     private bool isGrounded;
-    public GameObject smashPowerupIndicator;
-    public float smashJumpForce = 15f;
-    public float smashRadius = 15f;
-    public float maxSmashForce = 50f;
-    public float minSmashForce = 10f;
-    public Vector3 smashStackMultiplier = Vector3.one; // scales stackSpacing for this powerup
+    private GameObject smashPowerupIndicator;
+    private float smashJumpForce = 15f;
+    private float smashRadius = 15f;
+    private float maxSmashForce = 50f;
+    private float minSmashForce = 10f;
+    private Vector3 smashStackMultiplier = Vector3.one; // scales stackSpacing for this powerup
 
     // shield powerup
-    public int shieldStacks;
-    public GameObject shieldIndicator;
-    public float shieldRadius = 4f;       // how far the shield reaches
-    public int shieldMaxHits = 3;         // enemies destroyed before shield breaks
-    public float shieldShrinkDuration = 0.4f; // how long enemies shrink before vanishing
+    private int shieldStacks;
+    private GameObject shieldIndicator;
+    private float shieldRadius = 4f;       // how far the shield reaches
+    private int shieldMaxHits = 3;         // enemies destroyed before shield breaks
+    private float shieldShrinkDuration = 0.4f; // how long enemies shrink before vanishing
     private int shieldHitsRemaining;
-    public Vector3 shieldStackMultiplier = new Vector3(0.3f, 0.3f, 0.3f); // scales stackSpacing for this powerup
+    private Vector3 shieldStackMultiplier = new Vector3(0.3f, 0.3f, 0.3f); // scales stackSpacing for this powerup
 
     // giant powerup
-    public int giantStacks;
-    public GameObject giantPowerupIndicator;
-    public float giantScale = 2f;              // how big the player gets
-    public float giantDuration = 10f;          // how long the player stays giant
-    public float giantShrinkBackDuration = 3f; // how long shrink-back takes
-    public float squishDuration = 1f;          // how long enemies flatten
-    public float squishGroundOffset = 0.03f;   // vertical offset above detected ground for squished enemies
-    public Vector3 giantStackMultiplier = Vector3.one;
+    private int giantStacks;
+    private GameObject giantPowerupIndicator;
+    private float giantScale = 2f;              // how big the player gets
+    private float giantDuration = 10f;          // how long the player stays giant
+    private float giantShrinkBackDuration = 3f; // how long shrink-back takes
+    private float squishDuration = 1f;          // how long enemies flatten
+    private float squishGroundOffset = 0.03f;   // vertical offset above detected ground for squished enemies
+    private Vector3 giantStackMultiplier = Vector3.one;
     private Vector3 originalPlayerScale;
     private bool isGiant;
     private bool isShrinkingBack;
@@ -367,71 +367,179 @@ public class PlayerControllerX : MonoBehaviour
     // pick up powerups on contact — all powerups stack
     private void OnTriggerEnter(Collider other)
     {
+        if (other.TryGetComponent(out KnockbackPowerupPickup knockbackPickup))
+        {
+            ApplyKnockbackPickup(knockbackPickup);
+            Destroy(other.gameObject);
+            return;
+        }
+
+        if (other.TryGetComponent(out SmashPowerupPickup smashPickup))
+        {
+            ApplySmashPickup(smashPickup);
+            Destroy(other.gameObject);
+            return;
+        }
+
+        if (other.TryGetComponent(out ShieldPowerupPickup shieldPickup))
+        {
+            ApplyShieldPickup(shieldPickup);
+            Destroy(other.gameObject);
+            return;
+        }
+
+        if (other.TryGetComponent(out GiantPowerupPickup giantPickup))
+        {
+            ApplyGiantPickup(giantPickup);
+            Destroy(other.gameObject);
+            return;
+        }
+
+        // fallback while transitioning old prefabs: still support tag-only pickups
         if (other.gameObject.CompareTag("KnockbackPowerup"))
         {
+            ApplyKnockbackPickup(null);
             Destroy(other.gameObject);
-            knockbackStacks++;
-
-            if (knockbackStacks == 1)
-                powerupIndicator.SetActive(true);   // first stack = show original
-            else
-                SpawnExtraIndicator(powerupIndicator, knockbackIndicatorBaseScale, knockbackIndicators, false, knockbackStackMultiplier);
-
-            // restart the timer on each pickup
-            if (knockbackCoroutine != null)
-                StopCoroutine(knockbackCoroutine);
-            knockbackCoroutine = StartCoroutine(PowerupCooldown());
         }
-
-        if (other.gameObject.CompareTag("SmashPowerup"))
+        else if (other.gameObject.CompareTag("SmashPowerup"))
         {
+            ApplySmashPickup(null);
             Destroy(other.gameObject);
-            smashPowerupStacks++;
-
-            if (smashPowerupStacks == 1)
-            {
-                if (smashPowerupIndicator != null) smashPowerupIndicator.SetActive(true);
-            }
-            else
-                SpawnExtraIndicator(smashPowerupIndicator, smashIndicatorBaseScale, smashIndicators, false, smashStackMultiplier);
         }
-
-        if (other.gameObject.CompareTag("ShieldPowerup"))
+        else if (other.gameObject.CompareTag("ShieldPowerup"))
         {
+            ApplyShieldPickup(null);
             Destroy(other.gameObject);
-            shieldStacks++;
-            if (shieldStacks == 1 || shieldHitsRemaining <= 0)
-                shieldHitsRemaining = shieldMaxHits;
-
-            if (shieldStacks == 1)
-            {
-                if (shieldIndicator != null) shieldIndicator.SetActive(true);
-            }
-            else
-                SpawnExtraIndicator(shieldIndicator, shieldIndicatorBaseScale, shieldIndicators, true, shieldStackMultiplier);
         }
-
-        if (other.gameObject.CompareTag("GiantPowerup"))
+        else if (other.gameObject.CompareTag("GiantPowerup"))
         {
+            ApplyGiantPickup(null);
             Destroy(other.gameObject);
-            giantStacks++;
-
-            if (giantStacks == 1)
-            {
-                if (giantPowerupIndicator != null) giantPowerupIndicator.SetActive(true);
-            }
-            else
-                SpawnExtraIndicator(giantPowerupIndicator, giantIndicatorBaseScale, giantIndicators, false, giantStackMultiplier);
-
-            // grow instantly, reset duration timer
-            transform.localScale = originalPlayerScale * giantScale;
-            isGiant = true;
-            isShrinkingBack = false;
-
-            if (giantCoroutine != null)
-                StopCoroutine(giantCoroutine);
-            giantCoroutine = StartCoroutine(GiantCooldown());
         }
+    }
+
+    void EnsureIndicatorInstance(GameObject prefab, ref GameObject instance, ref Vector3 baseScale)
+    {
+        if (instance != null) return;
+        if (!prefab) return;
+
+        try
+        {
+            instance = Instantiate(prefab, transform.position, prefab.transform.rotation);
+            instance.name = prefab.name;
+            instance.SetActive(false);
+            baseScale = instance.transform.lossyScale;
+        }
+        catch (MissingReferenceException)
+        {
+            // missing/broken prefab reference: leave indicator unset
+            instance = null;
+        }
+    }
+
+    void ApplyKnockbackPickup(KnockbackPowerupPickup pickup)
+    {
+        if (pickup != null)
+        {
+            powerUpDuration = pickup.durationSeconds;
+            powerupStrength = pickup.boostedKnockbackStrength;
+            knockbackStackMultiplier = pickup.stackMultiplier;
+            EnsureIndicatorInstance(pickup.indicatorPrefab, ref powerupIndicator, ref knockbackIndicatorBaseScale);
+        }
+
+        knockbackStacks++;
+        if (knockbackStacks == 1)
+        {
+            if (powerupIndicator != null) powerupIndicator.SetActive(true);
+        }
+        else
+        {
+            SpawnExtraIndicator(powerupIndicator, knockbackIndicatorBaseScale, knockbackIndicators, false, knockbackStackMultiplier);
+        }
+
+        if (knockbackCoroutine != null)
+            StopCoroutine(knockbackCoroutine);
+        knockbackCoroutine = StartCoroutine(PowerupCooldown());
+    }
+
+    void ApplySmashPickup(SmashPowerupPickup pickup)
+    {
+        if (pickup != null)
+        {
+            smashJumpForce = pickup.smashJumpForce;
+            smashRadius = pickup.smashRadius;
+            maxSmashForce = pickup.maxSmashForce;
+            minSmashForce = pickup.minSmashForce;
+            smashStackMultiplier = pickup.stackMultiplier;
+            EnsureIndicatorInstance(pickup.indicatorPrefab, ref smashPowerupIndicator, ref smashIndicatorBaseScale);
+        }
+
+        smashPowerupStacks++;
+        if (smashPowerupStacks == 1)
+        {
+            if (smashPowerupIndicator != null) smashPowerupIndicator.SetActive(true);
+        }
+        else
+        {
+            SpawnExtraIndicator(smashPowerupIndicator, smashIndicatorBaseScale, smashIndicators, false, smashStackMultiplier);
+        }
+    }
+
+    void ApplyShieldPickup(ShieldPowerupPickup pickup)
+    {
+        if (pickup != null)
+        {
+            shieldRadius = pickup.shieldRadius;
+            shieldMaxHits = pickup.shieldMaxHits;
+            shieldShrinkDuration = pickup.shieldShrinkDuration;
+            shieldStackMultiplier = pickup.stackMultiplier;
+            EnsureIndicatorInstance(pickup.indicatorPrefab, ref shieldIndicator, ref shieldIndicatorBaseScale);
+        }
+
+        shieldStacks++;
+        if (shieldStacks == 1 || shieldHitsRemaining <= 0)
+            shieldHitsRemaining = shieldMaxHits;
+
+        if (shieldStacks == 1)
+        {
+            if (shieldIndicator != null) shieldIndicator.SetActive(true);
+        }
+        else
+        {
+            SpawnExtraIndicator(shieldIndicator, shieldIndicatorBaseScale, shieldIndicators, true, shieldStackMultiplier);
+        }
+    }
+
+    void ApplyGiantPickup(GiantPowerupPickup pickup)
+    {
+        if (pickup != null)
+        {
+            giantScale = pickup.giantScale;
+            giantDuration = pickup.giantDuration;
+            giantShrinkBackDuration = pickup.giantShrinkBackDuration;
+            squishDuration = pickup.squishDuration;
+            squishGroundOffset = pickup.squishGroundOffset;
+            giantStackMultiplier = pickup.stackMultiplier;
+            EnsureIndicatorInstance(pickup.indicatorPrefab, ref giantPowerupIndicator, ref giantIndicatorBaseScale);
+        }
+
+        giantStacks++;
+        if (giantStacks == 1)
+        {
+            if (giantPowerupIndicator != null) giantPowerupIndicator.SetActive(true);
+        }
+        else
+        {
+            SpawnExtraIndicator(giantPowerupIndicator, giantIndicatorBaseScale, giantIndicators, false, giantStackMultiplier);
+        }
+
+        transform.localScale = originalPlayerScale * giantScale;
+        isGiant = true;
+        isShrinkingBack = false;
+
+        if (giantCoroutine != null)
+            StopCoroutine(giantCoroutine);
+        giantCoroutine = StartCoroutine(GiantCooldown());
     }
 
     // spawn an extra indicator clone for stacks beyond the first (bigger each time)

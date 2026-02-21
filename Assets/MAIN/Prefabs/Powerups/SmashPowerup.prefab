@@ -12,6 +12,7 @@ GameObject:
   - component: {fileID: 3230316615422491741}
   - component: {fileID: 1358127489304476309}
   - component: {fileID: 8136557686728112143}
+  - component: {fileID: 1759046024455871203}
   m_Layer: 0
   m_Name: SmashPowerup
   m_TagString: SmashPowerup
@@ -112,3 +113,21 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 0.528658, y: 0.43810678, z: 0.4578313}
   m_Center: {x: 0, y: -0.000000022351742, z: 0}
+--- !u!114 &1759046024455871203
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1180124939793404087}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 62c80d0409e5465f841ebbc6c2fbd8d9, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::SmashPowerupPickup
+  smashJumpForce: 60
+  smashRadius: 15
+  maxSmashForce: 50
+  minSmashForce: 10
+  indicatorPrefab: {fileID: 7862467771832844023, guid: 6ff5fe4b23db10b46aa38bf15cca57c1, type: 3}
+  stackMultiplier: {x: 1, y: 1, z: 1}
