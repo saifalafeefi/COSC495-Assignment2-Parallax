@@ -15,6 +15,9 @@ public class MainMenuSmashController : MonoBehaviour
     [SerializeField] Camera menuCamera;
     [SerializeField] LayerMask menuTargetMask;
 
+    [Tooltip("Camera starts aimed at this target. Drag the Start button here.")]
+    [SerializeField] Transform initialLookTarget;
+
     [Header("Camera Orbit (Aiming)")]
     [SerializeField] float mouseSensitivity = 2f;
     [SerializeField] float verticalSensitivity = 2f;
@@ -70,12 +73,23 @@ public class MainMenuSmashController : MonoBehaviour
         if (aimLine != null)
             aimLine.enabled = false;
 
-        // initialize orbit angles from current camera position
+        // initialize orbit so camera faces the initial look target (e.g. Start button)
         if (menuCamera != null && player != null)
         {
-            Vector3 dir = menuCamera.transform.position - player.position;
-            yaw = Mathf.Atan2(dir.x, dir.z) * Mathf.Rad2Deg;
-            pitch = Mathf.Asin(dir.normalized.y) * Mathf.Rad2Deg;
+            if (initialLookTarget != null)
+            {
+                // direction from player to target = where the camera should look
+                Vector3 lookDir = (initialLookTarget.position - player.position).normalized;
+                yaw = Mathf.Atan2(lookDir.x, lookDir.z) * Mathf.Rad2Deg;
+                pitch = -Mathf.Asin(lookDir.y) * Mathf.Rad2Deg;
+            }
+            else
+            {
+                // fallback: derive from current camera placement
+                Vector3 dir = menuCamera.transform.position - player.position;
+                yaw = Mathf.Atan2(dir.x, dir.z) * Mathf.Rad2Deg;
+                pitch = Mathf.Asin(dir.normalized.y) * Mathf.Rad2Deg;
+            }
             pitch = Mathf.Clamp(pitch, minPitch, maxPitch);
         }
 

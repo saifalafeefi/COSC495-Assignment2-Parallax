@@ -1209,4 +1209,13 @@ public class PlayerControllerX : MonoBehaviour
     public bool IsShieldActive => shieldStacks > 0;
     public bool IsGiantActive => isGiant;
     public bool IsHauntActive => hauntStacks > 0;
+
+    // raw velocity magnitude (used by SpeedLinesEffect)
+    public float CurrentSpeed => playerRb != null ? playerRb.linearVelocity.magnitude : 0f;
+
+    // true during smash aiming or diving (slow-mo phases)
+    public bool IsSmashing => isAiming || isDiving;
+
+    // 0–1 ratio of current speed to max speed
+    public float SpeedRatio => playerRb != null ? Mathf.Clamp01(playerRb.linearVelocity.magnitude / maxSpeed) : 0f;
 }
