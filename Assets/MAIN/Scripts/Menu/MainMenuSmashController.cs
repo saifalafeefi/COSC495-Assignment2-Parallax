@@ -210,7 +210,9 @@ public class MainMenuSmashController : MonoBehaviour
         diveCollided = false;
         currentDiveSpeed = diveSpeed;
 
-        // clear visuals
+        // clear visuals + disable highlight so the button doesn't stay lit during dive
+        if (hoveredTarget != null) hoveredTarget.Unhighlight();
+        hoveredTarget = null;
         if (aimLine != null) aimLine.enabled = false;
         if (crosshairIndicator != null) crosshairIndicator.SetActive(false);
         if (screenCrosshair != null) screenCrosshair.gameObject.SetActive(false);
@@ -253,10 +255,19 @@ public class MainMenuSmashController : MonoBehaviour
     }
 
     // called by MenuBallCollision on the player ball (handles both trigger and collision)
-    public void NotifyCollision()
+    public void NotifyCollision(GameObject hitObject, Vector3 ballPos)
     {
         if (state == MenuState.Diving)
             diveCollided = true;
+
+        // shatter anything the ball hits that has MenuShatter, not just the selected target
+        if (hitObject != null)
+        {
+            var shatter = hitObject.GetComponent<MenuShatter>();
+            if (shatter == null) shatter = hitObject.GetComponentInParent<MenuShatter>();
+            if (shatter != null)
+                shatter.Shatter(ballPos);
+        }
     }
 
     // -- impact + transition --
@@ -265,13 +276,7 @@ public class MainMenuSmashController : MonoBehaviour
     {
         state = MenuState.TransitionOut;
 
-        // shatter the target into fragments on impact
-        if (selectedTarget != null)
-        {
-            var shatter = selectedTarget.GetComponent<MenuShatter>();
-            if (shatter != null)
-                shatter.Shatter(player.position);
-        }
+        // shattering is handled by NotifyCollision on any hit, no need to duplicate here
 
         yield return new WaitForSeconds(transitionDelay);
         ExecuteOption(selectedTarget.OptionType);

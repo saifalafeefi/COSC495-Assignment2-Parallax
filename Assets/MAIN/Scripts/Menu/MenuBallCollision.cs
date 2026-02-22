@@ -8,12 +8,12 @@ public class MenuBallCollision : MonoBehaviour
     void OnCollisionEnter(Collision collision)
     {
         if (controller != null)
-            controller.NotifyCollision();
+            controller.NotifyCollision(collision.gameObject, transform.position);
     }
 
     void OnTriggerEnter(Collider other)
     {
         if (controller != null)
-            controller.NotifyCollision();
+            controller.NotifyCollision(other.gameObject, transform.position);
     }
 }
