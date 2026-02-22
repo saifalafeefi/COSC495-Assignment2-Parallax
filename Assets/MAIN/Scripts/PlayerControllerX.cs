@@ -87,6 +87,7 @@ public class PlayerControllerX : MonoBehaviour
     private GameObject hauntIndicator;
     private Vector3 hauntStackMultiplier = Vector3.one;
     private Coroutine hauntCoroutine;
+    private GameObject hauntEnemyVfxPrefab; // particle effect to spawn on haunted enemies
 
     // stacking visuals — each stack spawns a slightly larger copy of the indicator
     // X/Z = scale growth per stack, Y = vertical position offset per stack
@@ -596,6 +597,7 @@ public class PlayerControllerX : MonoBehaviour
             hauntSpeed = pickup.hauntSpeed;
             hauntEffectDuration = pickup.hauntEffectDuration;
             hauntStackMultiplier = pickup.stackMultiplier;
+            hauntEnemyVfxPrefab = pickup.hauntEnemyVfxPrefab;
             EnsureIndicatorInstance(pickup.indicatorPrefab, ref hauntIndicator, ref hauntIndicatorBaseScale);
         }
 
@@ -1171,7 +1173,7 @@ public class PlayerControllerX : MonoBehaviour
             if (hauntStacks > 0)
             {
                 EnemyX enemy = other.gameObject.GetComponent<EnemyX>();
-                if (enemy != null) enemy.Haunt(hauntSpeed, hauntEffectDuration);
+                if (enemy != null) enemy.Haunt(hauntSpeed, hauntEffectDuration, hauntEnemyVfxPrefab);
             }
 
             Rigidbody enemyRigidbody = other.gameObject.GetComponent<Rigidbody>();

@@ -19,6 +19,8 @@ public class EnemyX : MonoBehaviour
     private bool isHaunted;
     private float hauntTimer;
     private float hauntMoveSpeed;
+    private static GameObject hauntVfxPrefab; // stored once from first Haunt() call, reused for spreading
+    private GameObject hauntVfxInstance;       // active particle effect on this enemy
 
     // call this from anywhere to stun the enemy (resets timer if already stunned)
     public void Stun()
@@ -30,12 +32,23 @@ public class EnemyX : MonoBehaviour
     }
 
     // haunted enemies lock onto their own goal hard and fast
-    public void Haunt(float speed, float duration)
+    public void Haunt(float speed, float duration, GameObject vfxPrefab = null)
     {
         isHaunted = true;
         isStunned = false; // haunt replaces stun
         hauntMoveSpeed = speed;
         hauntTimer = duration;
+
+        // store prefab once so spreading enemies can spawn VFX too
+        if (vfxPrefab != null)
+            hauntVfxPrefab = vfxPrefab;
+
+        // spawn/respawn VFX on this enemy
+        if (hauntVfxInstance != null) Destroy(hauntVfxInstance);
+        if (hauntVfxPrefab != null)
+        {
+            hauntVfxInstance = Instantiate(hauntVfxPrefab, transform.position, Quaternion.identity, transform);
+        }
     }
 
     void Start()
@@ -65,6 +78,7 @@ public class EnemyX : MonoBehaviour
             if (hauntTimer <= 0f)
             {
                 isHaunted = false;
+                if (hauntVfxInstance != null) Destroy(hauntVfxInstance);
             }
             else if (enemyGoal != null)
             {
@@ -119,6 +133,20 @@ public class EnemyX : MonoBehaviour
         {
             Stun();
         }
+        // spread haunt to normal enemies on contact (shared remaining duration)
+        else if (isHaunted && other.gameObject.CompareTag("Enemy"))
+        {
+            EnemyX otherEnemy = other.gameObject.GetComponent<EnemyX>();
+            if (otherEnemy != null && !otherEnemy.isHaunted)
+            {
+                otherEnemy.Haunt(hauntMoveSpeed, hauntTimer);
+            }
+        }
+    }
+
+    void OnDestroy()
+    {
+        if (hauntVfxInstance != null) Destroy(hauntVfxInstance);
     }
 
     // colored sphere gizmo for status (only visible with Gizmos enabled in Scene/Game view)
