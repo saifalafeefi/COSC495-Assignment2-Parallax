@@ -15,11 +15,27 @@ public class EnemyX : MonoBehaviour
     private bool isStunned;
     private float stunTimer;
 
+    // haunted enemies aggressively home toward their own goal
+    private bool isHaunted;
+    private float hauntTimer;
+    private float hauntMoveSpeed;
+
     // call this from anywhere to stun the enemy (resets timer if already stunned)
     public void Stun()
     {
+        // haunt overrides stun — don't downgrade to weaker drift
+        if (isHaunted) return;
         isStunned = true;
         stunTimer = stunDuration;
+    }
+
+    // haunted enemies lock onto their own goal hard and fast
+    public void Haunt(float speed, float duration)
+    {
+        isHaunted = true;
+        isStunned = false; // haunt replaces stun
+        hauntMoveSpeed = speed;
+        hauntTimer = duration;
     }
 
     void Start()
@@ -41,6 +57,22 @@ public class EnemyX : MonoBehaviour
     void Update()
     {
         if (playerGoal == null) return;
+
+        // haunted: aggressively home toward enemy goal (much stronger than stun)
+        if (isHaunted)
+        {
+            hauntTimer -= Time.deltaTime;
+            if (hauntTimer <= 0f)
+            {
+                isHaunted = false;
+            }
+            else if (enemyGoal != null)
+            {
+                Vector3 toGoal = (enemyGoal.transform.position - transform.position).normalized;
+                enemyRb.AddForce(toGoal * hauntMoveSpeed, ForceMode.Force);
+            }
+            return;
+        }
 
         if (isStunned)
         {
@@ -89,10 +121,16 @@ public class EnemyX : MonoBehaviour
         }
     }
 
-    // blue sphere gizmo when stunned (only visible with Gizmos enabled in Scene/Game view)
+    // colored sphere gizmo for status (only visible with Gizmos enabled in Scene/Game view)
     void OnDrawGizmos()
     {
-        if (isStunned)
+        if (isHaunted)
+        {
+            // purple when haunted
+            Gizmos.color = new Color(0.6f, 0f, 1f, 0.5f);
+            Gizmos.DrawSphere(transform.position, 1.5f);
+        }
+        else if (isStunned)
         {
             Gizmos.color = new Color(0f, 0.5f, 1f, 0.5f);
             Gizmos.DrawSphere(transform.position, 1.5f);

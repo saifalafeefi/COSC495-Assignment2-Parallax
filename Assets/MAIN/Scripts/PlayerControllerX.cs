@@ -79,6 +79,15 @@ public class PlayerControllerX : MonoBehaviour
     private float shrinkBackElapsed;
     private Coroutine giantCoroutine;
 
+    // haunt powerup — touched enemies aggressively home toward their own goal
+    private int hauntStacks;
+    private float hauntDuration = 8f;
+    private float hauntSpeed = 15f;
+    private float hauntEffectDuration = 5f;
+    private GameObject hauntIndicator;
+    private Vector3 hauntStackMultiplier = Vector3.one;
+    private Coroutine hauntCoroutine;
+
     // stacking visuals — each stack spawns a slightly larger copy of the indicator
     // X/Z = scale growth per stack, Y = vertical position offset per stack
     public Vector3 stackSpacing = new Vector3(0.3f, 0.15f, 0.3f);
@@ -86,10 +95,12 @@ public class PlayerControllerX : MonoBehaviour
     private List<GameObject> smashIndicators = new List<GameObject>();
     private List<GameObject> shieldIndicators = new List<GameObject>();
     private List<GameObject> giantIndicators = new List<GameObject>();
+    private List<GameObject> hauntIndicators = new List<GameObject>();
     private Vector3 knockbackIndicatorBaseScale;
     private Vector3 smashIndicatorBaseScale;
     private Vector3 shieldIndicatorBaseScale;
     private Vector3 giantIndicatorBaseScale;
+    private Vector3 hauntIndicatorBaseScale;
 
     // smash aiming system
     public GameObject landingIndicator;
@@ -139,6 +150,8 @@ public class PlayerControllerX : MonoBehaviour
             shieldIndicatorBaseScale = new Vector3(shieldRadius * 2f, shieldRadius * 2f, shieldRadius * 2f);
         if (giantPowerupIndicator != null)
             giantIndicatorBaseScale = giantPowerupIndicator.transform.lossyScale;
+        if (hauntIndicator != null)
+            hauntIndicatorBaseScale = hauntIndicator.transform.lossyScale;
 
         // save original player scale for giant powerup
         originalPlayerScale = transform.localScale;
@@ -307,6 +320,12 @@ public class PlayerControllerX : MonoBehaviour
             if (giantIndicators[i] != null)
                 giantIndicators[i].transform.position = indicatorPos + new Vector3(0, (i + 1) * stackSpacing.y * giantStackMultiplier.y, 0);
 
+        if (hauntIndicator != null)
+            hauntIndicator.transform.position = indicatorPos;
+        for (int i = 0; i < hauntIndicators.Count; i++)
+            if (hauntIndicators[i] != null)
+                hauntIndicators[i].transform.position = indicatorPos + new Vector3(0, (i + 1) * stackSpacing.y * hauntStackMultiplier.y, 0);
+
         // giant: squish enemies on contact (overlap, not collision, so no physics push)
         if (isGiant)
         {
@@ -410,6 +429,13 @@ public class PlayerControllerX : MonoBehaviour
             return;
         }
 
+        if (other.TryGetComponent(out HauntPowerupPickup hauntPickup))
+        {
+            ApplyHauntPickup(hauntPickup);
+            Destroy(other.gameObject);
+            return;
+        }
+
         // fallback while transitioning old prefabs: still support tag-only pickups
         if (other.gameObject.CompareTag("KnockbackPowerup"))
         {
@@ -429,6 +455,11 @@ public class PlayerControllerX : MonoBehaviour
         else if (other.gameObject.CompareTag("GiantPowerup"))
         {
             ApplyGiantPickup(null);
+            Destroy(other.gameObject);
+        }
+        else if (other.gameObject.CompareTag("HauntPowerup"))
+        {
+            ApplyHauntPickup(null);
             Destroy(other.gameObject);
         }
     }
@@ -555,6 +586,50 @@ public class PlayerControllerX : MonoBehaviour
         if (giantCoroutine != null)
             StopCoroutine(giantCoroutine);
         giantCoroutine = StartCoroutine(GiantCooldown());
+    }
+
+    void ApplyHauntPickup(HauntPowerupPickup pickup)
+    {
+        if (pickup != null)
+        {
+            hauntDuration = pickup.hauntDuration;
+            hauntSpeed = pickup.hauntSpeed;
+            hauntEffectDuration = pickup.hauntEffectDuration;
+            hauntStackMultiplier = pickup.stackMultiplier;
+            EnsureIndicatorInstance(pickup.indicatorPrefab, ref hauntIndicator, ref hauntIndicatorBaseScale);
+        }
+
+        hauntStacks++;
+        if (hauntStacks == 1)
+        {
+            if (hauntIndicator != null) hauntIndicator.SetActive(true);
+        }
+        else
+        {
+            SpawnExtraIndicator(hauntIndicator, hauntIndicatorBaseScale, hauntIndicators, false, hauntStackMultiplier);
+        }
+
+        // reset timer on re-pickup (same as knockback)
+        if (hauntCoroutine != null)
+            StopCoroutine(hauntCoroutine);
+        hauntCoroutine = StartCoroutine(HauntCooldown());
+    }
+
+    // haunt buff wears off one stack at a time
+    IEnumerator HauntCooldown()
+    {
+        yield return new WaitForSeconds(hauntDuration);
+        hauntStacks--;
+        if (hauntStacks <= 0)
+        {
+            hauntStacks = 0;
+            ClearExtraIndicators(hauntIndicators);
+            if (hauntIndicator != null) hauntIndicator.SetActive(false);
+        }
+        else
+        {
+            RemoveExtraIndicator(hauntIndicators);
+        }
     }
 
     // spawn an extra indicator clone for stacks beyond the first (bigger each time)
@@ -1091,6 +1166,13 @@ public class PlayerControllerX : MonoBehaviour
         {
             // giant handles enemies via OverlapSphere, skip knockback
             if (isGiant) return;
+
+            // haunt the enemy if buff is active
+            if (hauntStacks > 0)
+            {
+                EnemyX enemy = other.gameObject.GetComponent<EnemyX>();
+                if (enemy != null) enemy.Haunt(hauntSpeed, hauntEffectDuration);
+            }
 
             Rigidbody enemyRigidbody = other.gameObject.GetComponent<Rigidbody>();
             Vector3 awayFromPlayer = (other.gameObject.transform.position - transform.position).normalized;
