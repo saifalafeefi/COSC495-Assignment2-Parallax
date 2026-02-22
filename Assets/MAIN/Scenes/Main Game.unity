@@ -1498,6 +1498,24 @@ Rigidbody:
   m_CorrespondingSourceObject: {fileID: 4005209303313156299, guid: 74189d3b1b090444fb3fca33a5ea1062, type: 3}
   m_PrefabInstance: {fileID: 7307224665425030074}
   m_PrefabAsset: {fileID: 0}
+--- !u!114 &583048349
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 583048338}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4a85ee97eb4a53449b8e818c068f883f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PlayerPowerupColor
+  knockbackColor: {r: 1, g: 0.89, b: 0, a: 1}
+  smashColor: {r: 1, g: 0, b: 0, a: 1}
+  shieldColor: {r: 0, g: 0.77, b: 1, a: 1}
+  giantColor: {r: 0.11, g: 0.53, b: 0.22, a: 1}
+  hauntColor: {r: 0.86, g: 0, b: 1, a: 1}
+  fadeSpeed: 3
 --- !u!1001 &600024273
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -5750,7 +5768,10 @@ PrefabInstance:
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 7938855902651581350, guid: 74189d3b1b090444fb3fca33a5ea1062, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 583048349}
   m_SourcePrefab: {fileID: 100100000, guid: 74189d3b1b090444fb3fca33a5ea1062, type: 3}
 --- !u!1001 &8488333761658725360
 PrefabInstance:

@@ -1189,4 +1189,11 @@ public class PlayerControllerX : MonoBehaviour
             }
         }
     }
+
+    // read-only powerup state for external scripts (e.g. PlayerPowerupColor)
+    public bool IsKnockbackActive => knockbackStacks > 0;
+    public bool IsSmashActive => smashPowerupStacks > 0;
+    public bool IsShieldActive => shieldStacks > 0;
+    public bool IsGiantActive => isGiant;
+    public bool IsHauntActive => hauntStacks > 0;
 }
