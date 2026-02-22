@@ -172,6 +172,13 @@ public class GameManagerX : MonoBehaviour
         SceneManager.LoadScene(SceneManager.GetActiveScene().name);
     }
 
+    // hooked to Main Menu button onClick
+    public void MainMenu()
+    {
+        Time.timeScale = 1f;
+        SceneManager.LoadScene("Main Menu");
+    }
+
     // hooked to Quit button onClick
     public void QuitGame()
     {
