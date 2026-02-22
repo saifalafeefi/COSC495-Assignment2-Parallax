@@ -169,7 +169,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4005209303313156299, guid: 74189d3b1b090444fb3fca33a5ea1062, type: 3}
       propertyPath: m_Mass
-      value: 5
+      value: 20
       objectReference: {fileID: 0}
     - target: {fileID: 4005209303313156299, guid: 74189d3b1b090444fb3fca33a5ea1062, type: 3}
       propertyPath: m_LinearDamping
@@ -1029,8 +1029,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f12f1e0f68597744d9ee15d5f21ed80d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::MenuShatter
-  gridSize: 3
-  explosionForce: 15
+  gridSize: 6
+  explosionForce: 7.5
   fragmentLifetime: 3
   fragmentScaleJitter: 0.3
 --- !u!1 &1152263929
@@ -1305,8 +1305,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f12f1e0f68597744d9ee15d5f21ed80d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::MenuShatter
-  gridSize: 3
-  explosionForce: 15
+  gridSize: 6
+  explosionForce: 7.5
   fragmentLifetime: 3
   fragmentScaleJitter: 0.3
 --- !u!1 &1434112391
@@ -1434,8 +1434,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f12f1e0f68597744d9ee15d5f21ed80d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::MenuShatter
-  gridSize: 3
-  explosionForce: 15
+  gridSize: 6
+  explosionForce: 7.5
   fragmentLifetime: 3
   fragmentScaleJitter: 0.3
 --- !u!1 &1461615603
@@ -1769,8 +1769,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f12f1e0f68597744d9ee15d5f21ed80d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::MenuShatter
-  gridSize: 3
-  explosionForce: 15
+  gridSize: 6
+  explosionForce: 7.5
   fragmentLifetime: 3
   fragmentScaleJitter: 0.3
 --- !u!1 &1733134098
