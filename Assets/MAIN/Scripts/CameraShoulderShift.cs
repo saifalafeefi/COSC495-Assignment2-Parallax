@@ -24,6 +24,14 @@ public class CameraShoulderShift : MonoBehaviour
     private Vector3 targetOffset;
     private float offsetTweenProgress = 1f; // start done so it doesn't tween on startup
 
+    // distance override
+    private bool distanceOverridden;
+    private float originalDistance;
+    public float OriginalDistance => originalDistance;
+    private float distanceFrom;
+    private float targetDistance;
+    private float distanceTweenProgress = 1f;
+
     public void ForceCameraSide(float side)
     {
         sideOverridden = true;
@@ -56,15 +64,37 @@ public class CameraShoulderShift : MonoBehaviour
         }
     }
 
+    public void ForceCameraDistance(float distance)
+    {
+        distanceOverridden = true;
+        if (thirdPersonFollow != null)
+            distanceFrom = thirdPersonFollow.CameraDistance;
+        targetDistance = distance;
+        distanceTweenProgress = 0f;
+    }
+
+    public void ReleaseCameraDistance()
+    {
+        if (distanceOverridden)
+        {
+            distanceOverridden = false;
+            distanceFrom = thirdPersonFollow != null ? thirdPersonFollow.CameraDistance : targetDistance;
+            targetDistance = originalDistance;
+            distanceTweenProgress = 0f;
+        }
+    }
+
     void Start()
     {
         thirdPersonFollow = GetComponent<CinemachineThirdPersonFollow>();
 
-        // save the original offset so the startup tween doesn't zero it out
+        // save originals so tweens don't zero them out on startup
         if (thirdPersonFollow != null)
         {
             originalOffset = thirdPersonFollow.ShoulderOffset;
             targetOffset = originalOffset;
+            originalDistance = thirdPersonFollow.CameraDistance;
+            targetDistance = originalDistance;
         }
     }
 
@@ -82,6 +112,14 @@ public class CameraShoulderShift : MonoBehaviour
             offsetTweenProgress = Mathf.MoveTowards(offsetTweenProgress, 1f, Time.unscaledDeltaTime / tweenDuration);
             float eased = Easing.Evaluate(tweenEasing, offsetTweenProgress);
             thirdPersonFollow.ShoulderOffset = Vector3.Lerp(thirdPersonFollow.ShoulderOffset, targetOffset, eased);
+        }
+
+        // tween camera distance
+        if (distanceOverridden || distanceTweenProgress < 1f)
+        {
+            distanceTweenProgress = Mathf.MoveTowards(distanceTweenProgress, 1f, Time.unscaledDeltaTime / tweenDuration);
+            float eased = Easing.Evaluate(tweenEasing, distanceTweenProgress);
+            thirdPersonFollow.CameraDistance = Mathf.Lerp(distanceFrom, targetDistance, eased);
         }
 
         if (sideOverridden)

@@ -1510,11 +1510,14 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4a85ee97eb4a53449b8e818c068f883f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PlayerPowerupColor
+  overlayMaterial: {fileID: 0}
   knockbackColor: {r: 1, g: 0.89, b: 0, a: 1}
   smashColor: {r: 1, g: 0, b: 0, a: 1}
   shieldColor: {r: 0, g: 0.77, b: 1, a: 1}
   giantColor: {r: 0.11, g: 0.53, b: 0.22, a: 1}
   hauntColor: {r: 0.86, g: 0, b: 1, a: 1}
+  noiseScale: 2
+  flowSpeed: 3
   fadeSpeed: 3
 --- !u!1001 &600024273
 PrefabInstance:

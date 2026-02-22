@@ -66,7 +66,8 @@ public class PlayerControllerX : MonoBehaviour
     // giant powerup
     private int giantStacks;
     private GameObject giantPowerupIndicator;
-    private float giantScale = 2f;              // how big the player gets
+    private float giantScale = 2f;
+    private float giantCameraDistance = 8f;      // camera distance while giant
     private float giantDuration = 10f;          // how long the player stays giant
     private float giantShrinkBackDuration = 3f; // how long shrink-back takes
     private float squishDuration = 1f;          // how long enemies flatten
@@ -276,17 +277,24 @@ public class PlayerControllerX : MonoBehaviour
             }
         }
 
-        // giant shrink-back: lerp player scale back to normal
+        // giant shrink-back: lerp player scale + camera distance back to normal together
         if (isShrinkingBack)
         {
             shrinkBackElapsed += Time.deltaTime;
             float t = shrinkBackElapsed / giantShrinkBackDuration;
             transform.localScale = Vector3.Lerp(shrinkBackStartScale, originalPlayerScale, t);
+
+            // camera distance follows the same curve so it doesn't snap back early
+            if (shoulderShift != null)
+                shoulderShift.ForceCameraDistance(Mathf.Lerp(giantCameraDistance, shoulderShift.OriginalDistance, t));
+
             if (t >= 1f)
             {
                 transform.localScale = originalPlayerScale;
                 isShrinkingBack = false;
                 isGiant = false;
+                if (shoulderShift != null)
+                    shoulderShift.ReleaseCameraDistance();
             }
         }
 
@@ -566,6 +574,7 @@ public class PlayerControllerX : MonoBehaviour
             giantShrinkBackDuration = pickup.giantShrinkBackDuration;
             squishDuration = pickup.squishDuration;
             squishGroundOffset = pickup.squishGroundOffset;
+            giantCameraDistance = pickup.cameraDistance;
             giantStackMultiplier = pickup.stackMultiplier;
             EnsureIndicatorInstance(pickup.indicatorPrefab, ref giantPowerupIndicator, ref giantIndicatorBaseScale);
         }
@@ -583,6 +592,10 @@ public class PlayerControllerX : MonoBehaviour
         transform.localScale = originalPlayerScale * giantScale;
         isGiant = true;
         isShrinkingBack = false;
+
+        // push camera back so the bigger ball doesn't fill the screen
+        if (shoulderShift != null)
+            shoulderShift.ForceCameraDistance(giantCameraDistance);
 
         if (giantCoroutine != null)
             StopCoroutine(giantCoroutine);
@@ -708,7 +721,7 @@ public class PlayerControllerX : MonoBehaviour
             RemoveExtraIndicator(giantIndicators);
         }
 
-        // begin shrink-back lerp (handled in Update)
+        // begin shrink-back lerp (handled in Update, camera distance follows the same curve)
         shrinkBackStartScale = transform.localScale;
         shrinkBackElapsed = 0f;
         isShrinkingBack = true;

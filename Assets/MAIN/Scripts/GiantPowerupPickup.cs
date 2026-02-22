@@ -7,6 +7,7 @@ public class GiantPowerupPickup : MonoBehaviour
     public float giantShrinkBackDuration = 3f;
     public float squishDuration = 1f;
     public float squishGroundOffset = 0.03f;
+    public float cameraDistance = 8f;
     public GameObject indicatorPrefab;
     public Vector3 stackMultiplier = Vector3.one;
 }
