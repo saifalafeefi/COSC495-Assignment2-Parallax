@@ -2,13 +2,14 @@ using UnityEngine;
 using UnityEngine.SceneManagement;
 using System.Collections;
 using System.Collections.Generic;
+using TMPro;
 #if UNITY_EDITOR
 using UnityEditor;
 #endif
 
 public class MainMenuSmashController : MonoBehaviour
 {
-    enum MenuState { Aiming, Diving, Impact, TransitionOut, Settings }
+    enum MenuState { Aiming, Diving, Impact, TransitionOut, Settings, Skins }
 
     [Header("References")]
     [SerializeField] Transform player;
@@ -46,6 +47,22 @@ public class MainMenuSmashController : MonoBehaviour
     [Tooltip("Delay after smashing the settings button before camera tweens to settings view")]
     [SerializeField] float settingsDelay = 0.8f;
 
+    [Header("Skins View")]
+    [Tooltip("Optional player transform while previewing skins. If empty, current position is used.")]
+    [SerializeField] Transform skinsPlayerPoint;
+    [Tooltip("Optional camera point for skins preview view. If empty, camera keeps its current path.")]
+    [SerializeField] Transform skinsCameraPoint;
+    [Tooltip("Canvas/panel for skin controls (left/right/back).")]
+    [SerializeField] GameObject skinsPanel;
+    [Tooltip("Delay after smashing the skins button before entering skins view.")]
+    [SerializeField] float skinsDelay = 0.8f;
+    [Tooltip("How fast the player rotates while previewing skins.")]
+    [SerializeField] float skinsSpinSpeed = 25f;
+    [Tooltip("Keeps the player locked to SkinsPlayerPoint during skins preview.")]
+    [SerializeField] bool lockPlayerToSkinsPoint = true;
+    [SerializeField] PlayerSkinApplier skinPreview;
+    [SerializeField] TextMeshProUGUI skinNameLabel;
+
     [Header("Visuals (Optional)")]
     [SerializeField] LineRenderer aimLine;
     [SerializeField] GameObject crosshairIndicator;
@@ -67,6 +84,7 @@ public class MainMenuSmashController : MonoBehaviour
 
     // settings state
     Vector3 playerStartPos;
+    Quaternion playerStartRot;
 
     void Start()
     {
@@ -77,7 +95,10 @@ public class MainMenuSmashController : MonoBehaviour
         }
 
         if (player != null)
+        {
             playerStartPos = player.position;
+            playerStartRot = player.rotation;
+        }
 
         Cursor.lockState = CursorLockMode.Locked;
         Cursor.visible = false;
@@ -93,6 +114,11 @@ public class MainMenuSmashController : MonoBehaviour
 
         if (settingsPanel != null)
             settingsPanel.SetActive(false);
+        if (skinsPanel != null)
+            skinsPanel.SetActive(false);
+
+        if (skinPreview == null)
+            skinPreview = FindAnyObjectByType<PlayerSkinApplier>();
 
         // auto-attach collision forwarder to the player ball
         if (player != null)
@@ -124,6 +150,8 @@ public class MainMenuSmashController : MonoBehaviour
             UpdateAiming();
         else if (state == MenuState.Settings)
             UpdateSettings();
+        else if (state == MenuState.Skins)
+            UpdateSkins();
     }
 
     void FixedUpdate()
@@ -301,11 +329,84 @@ public class MainMenuSmashController : MonoBehaviour
         Cursor.visible = true;
     }
 
+    IEnumerator TransitionToSkins()
+    {
+        // let the shatter play out before moving to skins view
+        yield return new WaitForSeconds(skinsDelay);
+
+        state = MenuState.Skins;
+
+        // freeze and position the ball at the preview point
+        if (playerRb != null)
+        {
+            playerRb.useGravity = false;
+            playerRb.linearVelocity = Vector3.zero;
+            playerRb.angularVelocity = Vector3.zero;
+        }
+
+        if (player != null && skinsPlayerPoint != null)
+        {
+            player.position = skinsPlayerPoint.position;
+            player.rotation = skinsPlayerPoint.rotation;
+        }
+
+        // tween camera to skins preview point
+        if (skinsCameraPoint != null && menuCamera != null)
+        {
+            tweenFromPos = menuCamera.transform.position;
+            tweenFromRot = menuCamera.transform.rotation;
+            tweenToPos = skinsCameraPoint.position;
+            tweenToRot = skinsCameraPoint.rotation;
+            tweenProgress = 0f;
+        }
+
+        if (skinsPanel != null)
+            skinsPanel.SetActive(true);
+
+        if (skinPreview != null)
+        {
+            skinPreview.ApplySelectedSkin();
+            UpdateSkinLabel();
+        }
+
+        // show cursor for buttons
+        Cursor.lockState = CursorLockMode.None;
+        Cursor.visible = true;
+    }
+
     void UpdateSettings()
     {
         // Escape or Backspace to go back to menu
         if (Input.GetKeyDown(KeyCode.Escape) || Input.GetKeyDown(KeyCode.Backspace))
             ExitSettings();
+    }
+
+    void UpdateSkins()
+    {
+        if (player != null)
+        {
+            // keep preview stable even if physics/contact tries to push the ball
+            if (lockPlayerToSkinsPoint && skinsPlayerPoint != null)
+                player.position = skinsPlayerPoint.position;
+
+            if (playerRb != null)
+            {
+                playerRb.linearVelocity = Vector3.zero;
+                playerRb.angularVelocity = Vector3.zero;
+            }
+
+            player.Rotate(0f, skinsSpinSpeed * Time.unscaledDeltaTime, 0f, Space.World);
+        }
+
+        if (Input.GetKeyDown(KeyCode.LeftArrow) || Input.GetKeyDown(KeyCode.A))
+            OnSkinLeft();
+
+        if (Input.GetKeyDown(KeyCode.RightArrow) || Input.GetKeyDown(KeyCode.D))
+            OnSkinRight();
+
+        // Escape or Backspace to go back to menu
+        if (Input.GetKeyDown(KeyCode.Escape) || Input.GetKeyDown(KeyCode.Backspace))
+            ExitSkins();
     }
 
     void ExitSettings()
@@ -341,11 +442,78 @@ public class MainMenuSmashController : MonoBehaviour
         Cursor.visible = false;
     }
 
+    void ExitSkins()
+    {
+        state = MenuState.Aiming;
+
+        if (skinsPanel != null)
+            skinsPanel.SetActive(false);
+
+        // reset ball to original position/rotation
+        if (player != null && playerRb != null)
+        {
+            playerRb.linearVelocity = Vector3.zero;
+            playerRb.angularVelocity = Vector3.zero;
+            player.position = playerStartPos;
+            player.rotation = playerStartRot;
+        }
+
+        // recompute camera for current target from the reset player position
+        if (menuCamera != null && targets.Count > 0)
+        {
+            ComputeCameraForTarget(targets[currentIndex], out Vector3 returnPos, out Quaternion returnRot);
+            tweenFromPos = menuCamera.transform.position;
+            tweenFromRot = menuCamera.transform.rotation;
+            tweenToPos = returnPos;
+            tweenToRot = returnRot;
+            tweenProgress = 0f;
+        }
+
+        HighlightTarget(currentIndex);
+        if (screenCrosshair != null) screenCrosshair.gameObject.SetActive(true);
+
+        Cursor.lockState = CursorLockMode.Locked;
+        Cursor.visible = false;
+    }
+
     // called by settings UI back button
     public void OnSettingsBack()
     {
         if (state == MenuState.Settings)
             ExitSettings();
+    }
+
+    // called by skins UI back button
+    public void OnSkinsBack()
+    {
+        if (state == MenuState.Skins)
+            ExitSkins();
+    }
+
+    // called by skins UI left button (or keyboard in skins state)
+    public void OnSkinLeft()
+    {
+        if (state != MenuState.Skins) return;
+        if (skinPreview == null) skinPreview = FindAnyObjectByType<PlayerSkinApplier>();
+        if (skinPreview == null) return;
+        skinPreview.PreviousSkin();
+        UpdateSkinLabel();
+    }
+
+    // called by skins UI right button (or keyboard in skins state)
+    public void OnSkinRight()
+    {
+        if (state != MenuState.Skins) return;
+        if (skinPreview == null) skinPreview = FindAnyObjectByType<PlayerSkinApplier>();
+        if (skinPreview == null) return;
+        skinPreview.NextSkin();
+        UpdateSkinLabel();
+    }
+
+    void UpdateSkinLabel()
+    {
+        if (skinNameLabel == null || skinPreview == null) return;
+        skinNameLabel.text = $"Skin: {skinPreview.GetSkinName(skinPreview.SelectedSkinIndex)}";
     }
 
     // -- diving --
@@ -424,6 +592,13 @@ public class MainMenuSmashController : MonoBehaviour
             yield break;
         }
 
+        // skins has its own independent delay, skip transitionDelay for it
+        if (selectedTarget.OptionType == MenuOption.Skins)
+        {
+            StartCoroutine(TransitionToSkins());
+            yield break;
+        }
+
         yield return new WaitForSeconds(transitionDelay);
         ExecuteOption(selectedTarget.OptionType);
     }
@@ -438,6 +613,10 @@ public class MainMenuSmashController : MonoBehaviour
 
             case MenuOption.Settings:
                 StartCoroutine(TransitionToSettings());
+                break;
+
+            case MenuOption.Skins:
+                StartCoroutine(TransitionToSkins());
                 break;
 
             case MenuOption.Quit:

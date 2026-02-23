@@ -25,9 +25,8 @@ public class PlayerPowerupColor : MonoBehaviour
     public float fadeSpeed = 3f;
 
     private PlayerControllerX playerController;
-    private Renderer ballRenderer;
+    private Renderer[] targetRenderers;
     private Material overlayInstance; // runtime instance so we don't modify the asset
-    private MaterialPropertyBlock propBlock;
 
     // current interpolated weights
     private float w1, w2, w3, w4, w5;
@@ -49,8 +48,20 @@ public class PlayerPowerupColor : MonoBehaviour
     void Start()
     {
         playerController = GetComponent<PlayerControllerX>();
-        ballRenderer = GetComponent<Renderer>();
-        propBlock = new MaterialPropertyBlock();
+        // support visual-only child model swaps (prefabs with meshes under children)
+        Renderer[] allRenderers = GetComponentsInChildren<Renderer>(true);
+        var valid = new System.Collections.Generic.List<Renderer>();
+        foreach (Renderer r in allRenderers)
+        {
+            if (r is ParticleSystemRenderer) continue;
+            valid.Add(r);
+        }
+        targetRenderers = valid.ToArray();
+        if (targetRenderers.Length == 0)
+        {
+            enabled = false;
+            return;
+        }
 
         // create overlay material instance if none assigned
         if (overlayMaterial == null)
@@ -58,7 +69,6 @@ public class PlayerPowerupColor : MonoBehaviour
             Shader overlayShader = Shader.Find("Custom/PowerupOverlay");
             if (overlayShader == null)
             {
-                Debug.LogError("PlayerPowerupColor: Can't find Custom/PowerupOverlay shader!");
                 enabled = false;
                 return;
             }
@@ -70,17 +80,20 @@ public class PlayerPowerupColor : MonoBehaviour
         }
 
         // add overlay as second material slot (slot 0 = original, slot 1 = overlay)
-        Material[] origMats = ballRenderer.sharedMaterials;
-        Material[] newMats = new Material[origMats.Length + 1];
-        for (int i = 0; i < origMats.Length; i++)
-            newMats[i] = origMats[i];
-        newMats[origMats.Length] = overlayInstance;
-        ballRenderer.materials = newMats;
+        for (int r = 0; r < targetRenderers.Length; r++)
+        {
+            Material[] origMats = targetRenderers[r].sharedMaterials;
+            Material[] newMats = new Material[origMats.Length + 1];
+            for (int i = 0; i < origMats.Length; i++)
+                newMats[i] = origMats[i];
+            newMats[origMats.Length] = overlayInstance;
+            targetRenderers[r].materials = newMats;
+        }
     }
 
     void Update()
     {
-        if (playerController == null || ballRenderer == null || overlayInstance == null) return;
+        if (playerController == null || overlayInstance == null) return;
 
         // target weights: 1 if active, 0 if not
         float t1 = playerController.IsKnockbackActive ? 1f : 0f;

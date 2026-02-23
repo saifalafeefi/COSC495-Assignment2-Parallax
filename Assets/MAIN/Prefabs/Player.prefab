@@ -14,6 +14,8 @@ GameObject:
   - component: {fileID: 3814323110946094714}
   - component: {fileID: 4005209303313156299}
   - component: {fileID: 4802255550460497210}
+  - component: {fileID: 3381019616229785253}
+  - component: {fileID: 2040572753973794568}
   m_Layer: 0
   m_Name: Player
   m_TagString: Player
@@ -160,9 +162,18 @@ MonoBehaviour:
   jumpForce: 16
   groundCheckDistance: 1.5
   turboStrength: 15
-  turboParticle: {fileID: 4392870381175910774, guid: 6562db3a873684fa9b7da3aef8329d82, type: 3}
+  turboParticle: {fileID: 0}
   enableTurboVfx: 1
+  turboSmokeParticles: 8
+  turboSmokeMinSpeed: 1.5
+  turboSmokeMaxSpeed: 3.5
+  turboSmokeBackOffset: 0.5
+  turboSmokeUpOffset: 0.15
+  turboSmokeConeSpread: 0.35
+  turboSmokeDuration: 0.6
+  turboSmokeTickInterval: 0.06
   smashImpactSmokePrefab: {fileID: 4392870381175910774, guid: 6562db3a873684fa9b7da3aef8329d82, type: 3}
+  enableSmashImpactSmoke: 1
   smashSmokeMinParticles: 14
   smashSmokeMaxParticles: 26
   smashSmokeMinSpeed: 20
@@ -176,3 +187,53 @@ MonoBehaviour:
   diveAcceleration: 200
   launchDuration: 0.5
   smashCameraOffset: {x: 2, y: -0.5, z: 2.5}
+--- !u!114 &3381019616229785253
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7938855902651581350}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4a85ee97eb4a53449b8e818c068f883f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PlayerPowerupColor
+  overlayMaterial: {fileID: 0}
+  knockbackColor: {r: 1, g: 0.89, b: 0, a: 1}
+  smashColor: {r: 1, g: 0, b: 0, a: 1}
+  shieldColor: {r: 0, g: 0.77, b: 1, a: 1}
+  giantColor: {r: 0.11, g: 0.53, b: 0.22, a: 1}
+  hauntColor: {r: 0.86, g: 0, b: 1, a: 1}
+  noiseScale: 2
+  flowSpeed: 3
+  fadeSpeed: 3
+--- !u!114 &2040572753973794568
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7938855902651581350}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 99b33c09ac97a5648b1701bca2b95c22, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PlayerSkinApplier
+  skinMaterials:
+  - {fileID: 2100000, guid: 4c97b24d72ebade4d98acaf3b75c90ee, type: 2}
+  - {fileID: 2100000, guid: b5dcda18eb89d254e8011859299b1235, type: 2}
+  - {fileID: 2100000, guid: 58ff59dcb1c17ef4d9068f5b1e59c039, type: 2}
+  - {fileID: 2100000, guid: 61c02a50a03425c4a80e1c2fee4a6b36, type: 2}
+  - {fileID: 2100000, guid: 56bf593f189b5a94eb403a6359058443, type: 2}
+  - {fileID: 2100000, guid: 83d0d5577bb487c4291f45bcf0b0d011, type: 2}
+  - {fileID: 2100000, guid: 7c6f9e5292c98ad4eb32006b953321c9, type: 2}
+  - {fileID: 2100000, guid: 276d3b36e7368b14197bd1f9980bfb1e, type: 2}
+  - {fileID: 2100000, guid: c85456db401cc684a85b32d0d1c4f6b0, type: 2}
+  - {fileID: 2100000, guid: 722428b06618a2042a982365175f9eb1, type: 2}
+  - {fileID: 2100000, guid: 2d7166682d1cb4045a45ccac6c1ebce2, type: 2}
+  targetRenderers:
+  - {fileID: 7916078864488496608}
+  autoFindRenderers: 1
+  applyOnEnable: 1
+  ignoreParticleRenderers: 1
