@@ -8,7 +8,7 @@ using UnityEditor;
 
 public class MainMenuSmashController : MonoBehaviour
 {
-    enum MenuState { Aiming, Diving, Impact, TransitionOut }
+    enum MenuState { Aiming, Diving, Impact, TransitionOut, Settings }
 
     [Header("References")]
     [SerializeField] Transform player;
@@ -24,6 +24,11 @@ public class MainMenuSmashController : MonoBehaviour
     [SerializeField] float tweenDuration = 0.4f;
     [SerializeField] EasingType tweenEasing = EasingType.EaseOut;
 
+    [Header("Handheld Sway")]
+    [SerializeField] float swayAmount = 0.03f;
+    [SerializeField] float swaySpeed = 1f;
+    [SerializeField] float swayRotationAmount = 0.3f;
+
     [Header("Dive Settings")]
     [SerializeField] float diveSpeed = 40f;
     [SerializeField] float diveAcceleration = 70f;
@@ -32,6 +37,14 @@ public class MainMenuSmashController : MonoBehaviour
 
     [Header("Scene")]
     [SerializeField] string gameSceneName = "Challenge 4";
+
+    [Header("Settings View")]
+    [Tooltip("Camera position when viewing settings (place above the menu area)")]
+    [SerializeField] Transform settingsCameraPoint;
+    [Tooltip("Canvas/panel that holds settings UI — enabled when entering settings, disabled when leaving")]
+    [SerializeField] GameObject settingsPanel;
+    [Tooltip("Delay after smashing the settings button before camera tweens to settings view")]
+    [SerializeField] float settingsDelay = 0.8f;
 
     [Header("Visuals (Optional)")]
     [SerializeField] LineRenderer aimLine;
@@ -52,6 +65,9 @@ public class MainMenuSmashController : MonoBehaviour
     Quaternion tweenToRot;
     Vector3 tweenToPos;
 
+    // settings state
+    Vector3 playerStartPos;
+
     void Start()
     {
         if (playerRb != null)
@@ -59,6 +75,9 @@ public class MainMenuSmashController : MonoBehaviour
             playerRb.useGravity = false;
             playerRb.linearVelocity = Vector3.zero;
         }
+
+        if (player != null)
+            playerStartPos = player.position;
 
         Cursor.lockState = CursorLockMode.Locked;
         Cursor.visible = false;
@@ -71,6 +90,9 @@ public class MainMenuSmashController : MonoBehaviour
 
         if (aimLine != null)
             aimLine.enabled = false;
+
+        if (settingsPanel != null)
+            settingsPanel.SetActive(false);
 
         // auto-attach collision forwarder to the player ball
         if (player != null)
@@ -100,6 +122,8 @@ public class MainMenuSmashController : MonoBehaviour
     {
         if (state == MenuState.Aiming)
             UpdateAiming();
+        else if (state == MenuState.Settings)
+            UpdateSettings();
     }
 
     void FixedUpdate()
@@ -119,6 +143,25 @@ public class MainMenuSmashController : MonoBehaviour
             float t = Easing.Evaluate(tweenEasing, tweenProgress);
             menuCamera.transform.position = Vector3.Lerp(tweenFromPos, tweenToPos, t);
             menuCamera.transform.rotation = Quaternion.Slerp(tweenFromRot, tweenToRot, t);
+        }
+
+        // handheld sway — layered sine waves at irrational frequencies so it never repeats
+        {
+            float time = Time.unscaledTime * swaySpeed;
+            Vector3 posOffset = new Vector3(
+                Mathf.Sin(time * 1.0f) * 0.5f + Mathf.Sin(time * 2.37f) * 0.3f + Mathf.Sin(time * 4.13f) * 0.2f,
+                Mathf.Sin(time * 0.7f) * 0.5f + Mathf.Sin(time * 1.93f) * 0.3f + Mathf.Sin(time * 3.71f) * 0.2f,
+                Mathf.Sin(time * 0.5f) * 0.5f + Mathf.Sin(time * 1.57f) * 0.3f + Mathf.Sin(time * 2.89f) * 0.2f
+            ) * swayAmount;
+
+            Vector3 rotOffset = new Vector3(
+                Mathf.Sin(time * 0.9f) * 0.5f + Mathf.Sin(time * 2.11f) * 0.3f + Mathf.Sin(time * 3.47f) * 0.2f,
+                Mathf.Sin(time * 1.1f) * 0.5f + Mathf.Sin(time * 2.53f) * 0.3f + Mathf.Sin(time * 4.31f) * 0.2f,
+                Mathf.Sin(time * 0.6f) * 0.5f + Mathf.Sin(time * 1.79f) * 0.3f + Mathf.Sin(time * 3.17f) * 0.2f
+            ) * swayRotationAmount;
+
+            menuCamera.transform.position += posOffset;
+            menuCamera.transform.rotation *= Quaternion.Euler(rotOffset);
         }
     }
 
@@ -223,6 +266,88 @@ public class MainMenuSmashController : MonoBehaviour
         }
     }
 
+    // -- settings --
+
+    // called after the ball smashes the settings button + delay
+    IEnumerator TransitionToSettings()
+    {
+        // let the shatter play out before moving the camera
+        yield return new WaitForSeconds(settingsDelay);
+
+        state = MenuState.Settings;
+
+        // freeze the ball so it doesn't roll away
+        if (playerRb != null)
+        {
+            playerRb.useGravity = false;
+            playerRb.linearVelocity = Vector3.zero;
+        }
+
+        // tween camera to settings view point
+        if (settingsCameraPoint != null && menuCamera != null)
+        {
+            tweenFromPos = menuCamera.transform.position;
+            tweenFromRot = menuCamera.transform.rotation;
+            tweenToPos = settingsCameraPoint.position;
+            tweenToRot = settingsCameraPoint.rotation;
+            tweenProgress = 0f;
+        }
+
+        if (settingsPanel != null)
+            settingsPanel.SetActive(true);
+
+        // show cursor so player can interact with sliders
+        Cursor.lockState = CursorLockMode.None;
+        Cursor.visible = true;
+    }
+
+    void UpdateSettings()
+    {
+        // Escape or Backspace to go back to menu
+        if (Input.GetKeyDown(KeyCode.Escape) || Input.GetKeyDown(KeyCode.Backspace))
+            ExitSettings();
+    }
+
+    void ExitSettings()
+    {
+        state = MenuState.Aiming;
+
+        if (settingsPanel != null)
+            settingsPanel.SetActive(false);
+
+        // reset ball to original position first so camera computes correctly
+        if (player != null && playerRb != null)
+        {
+            playerRb.linearVelocity = Vector3.zero;
+            playerRb.angularVelocity = Vector3.zero;
+            player.position = playerStartPos;
+        }
+
+        // recompute camera for the current target from the reset player position
+        if (menuCamera != null && targets.Count > 0)
+        {
+            ComputeCameraForTarget(targets[currentIndex], out Vector3 returnPos, out Quaternion returnRot);
+            tweenFromPos = menuCamera.transform.position;
+            tweenFromRot = menuCamera.transform.rotation;
+            tweenToPos = returnPos;
+            tweenToRot = returnRot;
+            tweenProgress = 0f;
+        }
+
+        HighlightTarget(currentIndex);
+        if (screenCrosshair != null) screenCrosshair.gameObject.SetActive(true);
+
+        Cursor.lockState = CursorLockMode.Locked;
+        Cursor.visible = false;
+    }
+
+    // called by settings UI back button
+    public void OnSettingsBack()
+    {
+        if (state == MenuState.Settings)
+            ExitSettings();
+    }
+
     // -- diving --
 
     void StartDive()
@@ -292,6 +417,13 @@ public class MainMenuSmashController : MonoBehaviour
     {
         state = MenuState.TransitionOut;
 
+        // settings has its own independent delay, skip transitionDelay for it
+        if (selectedTarget.OptionType == MenuOption.Settings)
+        {
+            StartCoroutine(TransitionToSettings());
+            yield break;
+        }
+
         yield return new WaitForSeconds(transitionDelay);
         ExecuteOption(selectedTarget.OptionType);
     }
@@ -302,6 +434,10 @@ public class MainMenuSmashController : MonoBehaviour
         {
             case MenuOption.Start:
                 SceneManager.LoadScene(gameSceneName);
+                break;
+
+            case MenuOption.Settings:
+                StartCoroutine(TransitionToSettings());
                 break;
 
             case MenuOption.Quit:
