@@ -85,7 +85,7 @@ Material:
     - _AddPrecomputedVelocity: 0
     - _AlphaClip: 0
     - _AlphaToMask: 0
-    - _AspectRatio: 2.1622138
+    - _AspectRatio: 1.5520548
     - _BaseThickness: 0.4
     - _Blend: 0
     - _BlendModePreserveSpecular: 1
@@ -102,8 +102,8 @@ Material:
     - _GlossMapScale: 0
     - _Glossiness: 0
     - _GlossyReflections: 0
-    - _InnerRadius: 0.45485032
-    - _Intensity: 0.9067023
+    - _InnerRadius: 0.898356
+    - _Intensity: 0.0028771642
     - _Jitter: 0.2
     - _JitterSpeed: 8
     - _LengthVariation: 0.6
@@ -121,7 +121,7 @@ Material:
     - _Surface: 0
     - _ThicknessVariation: 0.2
     - _TipThickness: 0.1
-    - _UnscaledTime: 10.992712
+    - _UnscaledTime: 2.9886582
     - _WorkflowMode: 1
     - _XRMotionVectorsPass: 1
     - _ZWrite: 1

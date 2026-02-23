@@ -7,7 +7,11 @@ public class MenuSmashTarget : MonoBehaviour
     [SerializeField] Material highlightMaterial;
     [SerializeField, Range(0f, 1f)] float highlightOpacity = 0.3f;
 
+    [Tooltip("Camera look offset — shifts where the camera aims without moving the dive target")]
+    [SerializeField] Vector3 cameraLookOffset = Vector3.zero;
+
     public MenuOption OptionType => optionType;
+    public Vector3 CameraLookOffset => cameraLookOffset;
 
     Material originalMaterial;
 

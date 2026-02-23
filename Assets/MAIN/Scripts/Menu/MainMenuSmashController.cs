@@ -1,6 +1,7 @@
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using System.Collections;
+using System.Collections.Generic;
 #if UNITY_EDITOR
 using UnityEditor;
 #endif
@@ -13,17 +14,15 @@ public class MainMenuSmashController : MonoBehaviour
     [SerializeField] Transform player;
     [SerializeField] Rigidbody playerRb;
     [SerializeField] Camera menuCamera;
-    [SerializeField] LayerMask menuTargetMask;
 
-    [Tooltip("Camera starts aimed at this target. Drag the Start button here.")]
-    [SerializeField] Transform initialLookTarget;
+    [Header("Targets (ordered left to right)")]
+    [Tooltip("Drag menu targets here in left-to-right order. A/Left = previous, D/Right = next.")]
+    [SerializeField] List<MenuSmashTarget> targets = new List<MenuSmashTarget>();
 
-    [Header("Camera Orbit (Aiming)")]
-    [SerializeField] float mouseSensitivity = 2f;
-    [SerializeField] float verticalSensitivity = 2f;
-    [SerializeField] float minPitch = -80f;
-    [SerializeField] float maxPitch = 80f;
+    [Header("Camera")]
     [SerializeField] Vector3 shoulderOffset = new Vector3(1f, 2f, -3f);
+    [SerializeField] float tweenDuration = 0.4f;
+    [SerializeField] EasingType tweenEasing = EasingType.EaseOut;
 
     [Header("Dive Settings")]
     [SerializeField] float diveSpeed = 40f;
@@ -37,61 +36,41 @@ public class MainMenuSmashController : MonoBehaviour
     [Header("Visuals (Optional)")]
     [SerializeField] LineRenderer aimLine;
     [SerializeField] GameObject crosshairIndicator;
-    [SerializeField] RectTransform screenCrosshair; // UI crosshair anchored to screen center
+    [SerializeField] RectTransform screenCrosshair;
 
     MenuState state = MenuState.Aiming;
-    MenuSmashTarget hoveredTarget;
     MenuSmashTarget selectedTarget;
-    Vector3 diveTargetPoint; // exact hit point to dive toward
+    Vector3 diveTargetPoint;
     bool diveCollided;
     float currentDiveSpeed;
 
-    // camera orbit state
-    float yaw;
-    float pitch;
+    // camera tween state
+    int currentIndex;
+    float tweenProgress = 1f; // start done so no tween on first frame
+    Quaternion tweenFromRot;
+    Vector3 tweenFromPos;
+    Quaternion tweenToRot;
+    Vector3 tweenToPos;
 
     void Start()
     {
-        // keep the ball in place until player clicks
         if (playerRb != null)
         {
             playerRb.useGravity = false;
             playerRb.linearVelocity = Vector3.zero;
         }
 
-        // lock cursor for mouse-look (like smash aiming)
         Cursor.lockState = CursorLockMode.Locked;
         Cursor.visible = false;
 
         if (crosshairIndicator != null)
             crosshairIndicator.SetActive(false);
 
-        // screen crosshair visible from the start
         if (screenCrosshair != null)
             screenCrosshair.gameObject.SetActive(true);
 
         if (aimLine != null)
             aimLine.enabled = false;
-
-        // initialize orbit so camera faces the initial look target (e.g. Start button)
-        if (menuCamera != null && player != null)
-        {
-            if (initialLookTarget != null)
-            {
-                // direction from player to target = where the camera should look
-                Vector3 lookDir = (initialLookTarget.position - player.position).normalized;
-                yaw = Mathf.Atan2(lookDir.x, lookDir.z) * Mathf.Rad2Deg;
-                pitch = -Mathf.Asin(lookDir.y) * Mathf.Rad2Deg;
-            }
-            else
-            {
-                // fallback: derive from current camera placement
-                Vector3 dir = menuCamera.transform.position - player.position;
-                yaw = Mathf.Atan2(dir.x, dir.z) * Mathf.Rad2Deg;
-                pitch = Mathf.Asin(dir.normalized.y) * Mathf.Rad2Deg;
-            }
-            pitch = Mathf.Clamp(pitch, minPitch, maxPitch);
-        }
 
         // auto-attach collision forwarder to the player ball
         if (player != null)
@@ -100,6 +79,20 @@ public class MainMenuSmashController : MonoBehaviour
             if (ballCol == null)
                 ballCol = player.gameObject.AddComponent<MenuBallCollision>();
             ballCol.controller = this;
+        }
+
+        // start on first target (index 0)
+        currentIndex = 0;
+        if (targets.Count > 0)
+        {
+            // snap camera to first target immediately
+            ComputeCameraForTarget(targets[currentIndex], out tweenToPos, out tweenToRot);
+            if (menuCamera != null)
+            {
+                menuCamera.transform.position = tweenToPos;
+                menuCamera.transform.rotation = tweenToRot;
+            }
+            HighlightTarget(currentIndex);
         }
     }
 
@@ -119,100 +112,114 @@ public class MainMenuSmashController : MonoBehaviour
     {
         if (menuCamera == null || player == null) return;
 
-        // camera only moves during aiming, stays frozen once you click
-        if (state == MenuState.Aiming)
-            UpdateCameraOrbit();
+        // tween camera toward current target
+        if (tweenProgress < 1f)
+        {
+            tweenProgress = Mathf.MoveTowards(tweenProgress, 1f, Time.unscaledDeltaTime / tweenDuration);
+            float t = Easing.Evaluate(tweenEasing, tweenProgress);
+            menuCamera.transform.position = Vector3.Lerp(tweenFromPos, tweenToPos, t);
+            menuCamera.transform.rotation = Quaternion.Slerp(tweenFromRot, tweenToRot, t);
+        }
     }
 
     // -- camera --
 
-    void UpdateCameraOrbit()
+    void ComputeCameraForTarget(MenuSmashTarget target, out Vector3 pos, out Quaternion rot)
     {
-        // mouse rotates camera around the player (like RotateCameraX)
-        float mouseX = Input.GetAxis("Mouse X");
-        float mouseY = Input.GetAxis("Mouse Y");
+        // camera aims at target position + per-target offset (visual only, ball still dives at center)
+        Vector3 aimPoint = target.transform.position + target.CameraLookOffset;
+        Vector3 lookDir = (aimPoint - player.position).normalized;
+        float yaw = Mathf.Atan2(lookDir.x, lookDir.z) * Mathf.Rad2Deg;
+        float pitch = -Mathf.Asin(lookDir.y) * Mathf.Rad2Deg;
 
-        yaw += mouseX * mouseSensitivity;
-        pitch -= mouseY * verticalSensitivity;
-        pitch = Mathf.Clamp(pitch, minPitch, maxPitch);
-
-        // build rotation from yaw/pitch
         Quaternion rotation = Quaternion.Euler(pitch, yaw, 0f);
+        pos = player.position + rotation * shoulderOffset;
+        rot = rotation;
+    }
 
-        // position = player + rotation * shoulderOffset (shoulder-style close cam)
-        menuCamera.transform.position = player.position + rotation * shoulderOffset;
-        menuCamera.transform.rotation = Quaternion.LookRotation(player.position - menuCamera.transform.position);
+    void TweenToTarget(int index)
+    {
+        if (menuCamera == null || targets.Count == 0) return;
 
-        // slightly look past the player (aim direction), not directly at the ball
-        menuCamera.transform.rotation = rotation;
+        // save current as the tween start
+        tweenFromPos = menuCamera.transform.position;
+        tweenFromRot = menuCamera.transform.rotation;
+
+        ComputeCameraForTarget(targets[index], out tweenToPos, out tweenToRot);
+        tweenProgress = 0f;
     }
 
     // -- aiming --
 
     void UpdateAiming()
     {
-        // raycast from camera center (crosshair) like smash aiming
-        Ray ray = new Ray(menuCamera.transform.position, menuCamera.transform.forward);
+        if (targets.Count == 0) return;
 
-        if (Physics.Raycast(ray, out RaycastHit hit, 200f, menuTargetMask))
+        // A / Left Arrow = previous target
+        if (Input.GetKeyDown(KeyCode.A) || Input.GetKeyDown(KeyCode.LeftArrow))
+            NavigateTo(currentIndex - 1);
+
+        // D / Right Arrow = next target
+        if (Input.GetKeyDown(KeyCode.D) || Input.GetKeyDown(KeyCode.RightArrow))
+            NavigateTo(currentIndex + 1);
+
+        // confirm with Space, Enter, or left click
+        if (Input.GetKeyDown(KeyCode.Space) || Input.GetKeyDown(KeyCode.Return) || Input.GetMouseButtonDown(0))
         {
-            var target = hit.collider.GetComponent<MenuSmashTarget>();
-            if (target == null)
-                target = hit.collider.GetComponentInParent<MenuSmashTarget>();
-
-            if (target != null)
-            {
-                // switched to a new target
-                if (target != hoveredTarget)
-                {
-                    if (hoveredTarget != null) hoveredTarget.Unhighlight();
-                    hoveredTarget = target;
-                    hoveredTarget.Highlight();
-                }
-
-                UpdateAimVisuals(hit.point);
-
-                // click to select and dive toward the exact aim point
-                if (Input.GetMouseButtonDown(0))
-                {
-                    selectedTarget = target;
-                    diveTargetPoint = hit.point;
-                    StartDive();
-                }
-
-                return;
-            }
+            selectedTarget = targets[currentIndex];
+            diveTargetPoint = selectedTarget.transform.position;
+            StartDive();
         }
 
-        // not aiming at a target
-        ClearHover();
+        UpdateAimVisuals();
     }
 
-    void ClearHover()
+    void NavigateTo(int newIndex)
     {
-        if (hoveredTarget != null)
-        {
-            hoveredTarget.Unhighlight();
-            hoveredTarget = null;
-        }
+        if (targets.Count == 0) return;
 
-        if (aimLine != null) aimLine.enabled = false;
-        if (crosshairIndicator != null) crosshairIndicator.SetActive(false);
+        // wrap around — going past the end loops back to the start and vice versa
+        if (newIndex < 0) newIndex = targets.Count - 1;
+        else if (newIndex >= targets.Count) newIndex = 0;
+        if (newIndex == currentIndex) return;
+
+        // unhighlight old, highlight new
+        UnhighlightTarget(currentIndex);
+        currentIndex = newIndex;
+        HighlightTarget(currentIndex);
+
+        TweenToTarget(currentIndex);
     }
 
-    void UpdateAimVisuals(Vector3 hitPoint)
+    void HighlightTarget(int index)
     {
+        if (index >= 0 && index < targets.Count && targets[index] != null)
+            targets[index].Highlight();
+    }
+
+    void UnhighlightTarget(int index)
+    {
+        if (index >= 0 && index < targets.Count && targets[index] != null)
+            targets[index].Unhighlight();
+    }
+
+    void UpdateAimVisuals()
+    {
+        if (targets.Count == 0) return;
+
+        Vector3 targetPos = targets[currentIndex].transform.position;
+
         if (aimLine != null)
         {
             aimLine.enabled = true;
             aimLine.SetPosition(0, player.position);
-            aimLine.SetPosition(1, hitPoint);
+            aimLine.SetPosition(1, targetPos);
         }
 
         if (crosshairIndicator != null)
         {
             crosshairIndicator.SetActive(true);
-            crosshairIndicator.transform.position = hitPoint;
+            crosshairIndicator.transform.position = targetPos;
         }
     }
 
@@ -224,9 +231,8 @@ public class MainMenuSmashController : MonoBehaviour
         diveCollided = false;
         currentDiveSpeed = diveSpeed;
 
-        // clear visuals + disable highlight so the button doesn't stay lit during dive
-        if (hoveredTarget != null) hoveredTarget.Unhighlight();
-        hoveredTarget = null;
+        // clear visuals + disable highlight
+        UnhighlightTarget(currentIndex);
         if (aimLine != null) aimLine.enabled = false;
         if (crosshairIndicator != null) crosshairIndicator.SetActive(false);
         if (screenCrosshair != null) screenCrosshair.gameObject.SetActive(false);
@@ -241,14 +247,12 @@ public class MainMenuSmashController : MonoBehaviour
     {
         if (selectedTarget == null) return;
 
-        // accelerate toward the exact point the player was aiming at
         Vector3 dir = (diveTargetPoint - player.position).normalized;
         currentDiveSpeed += diveAcceleration * Time.fixedDeltaTime;
         playerRb.linearVelocity = dir * currentDiveSpeed;
 
         if (diveCollided)
         {
-            // keep momentum and let gravity take over
             playerRb.useGravity = true;
             state = MenuState.Impact;
             StartCoroutine(HandleImpact());
@@ -259,7 +263,6 @@ public class MainMenuSmashController : MonoBehaviour
     {
         yield return new WaitForSeconds(maxDiveTime);
 
-        // if still diving after timeout, force impact
         if (state == MenuState.Diving)
         {
             playerRb.useGravity = true;
@@ -268,13 +271,12 @@ public class MainMenuSmashController : MonoBehaviour
         }
     }
 
-    // called by MenuBallCollision on the player ball (handles both trigger and collision)
+    // called by MenuBallCollision on the player ball
     public void NotifyCollision(GameObject hitObject, Vector3 ballPos)
     {
         if (state == MenuState.Diving)
             diveCollided = true;
 
-        // shatter anything the ball hits that has MenuShatter, not just the selected target
         if (hitObject != null)
         {
             var shatter = hitObject.GetComponent<MenuShatter>();
@@ -289,8 +291,6 @@ public class MainMenuSmashController : MonoBehaviour
     IEnumerator HandleImpact()
     {
         state = MenuState.TransitionOut;
-
-        // shattering is handled by NotifyCollision on any hit, no need to duplicate here
 
         yield return new WaitForSeconds(transitionDelay);
         ExecuteOption(selectedTarget.OptionType);
