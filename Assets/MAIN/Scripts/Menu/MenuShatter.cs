@@ -1,5 +1,6 @@
 using UnityEngine;
 using TMPro;
+using System.Collections.Generic;
 
 public class MenuShatter : MonoBehaviour
 {
@@ -10,33 +11,63 @@ public class MenuShatter : MonoBehaviour
 
     // cache the primitive cube mesh (shared across all fragments)
     static Mesh cubeMesh;
+    bool isShattered;
+    Renderer[] cachedRenderers;
+    Collider[] cachedColliders;
+    readonly List<GameObject> spawnedPieces = new List<GameObject>();
+
+    void Awake()
+    {
+        cachedRenderers = GetComponentsInChildren<Renderer>(true);
+        cachedColliders = GetComponentsInChildren<Collider>(true);
+    }
 
     public void Shatter(Vector3 impactPoint)
     {
+        if (isShattered) return;
+        float lifetime = Mathf.Max(0f, fragmentLifetime);
+
         Renderer rend = GetComponentInChildren<Renderer>();
-        Collider col = GetComponentInChildren<Collider>();
         if (rend == null) return;
+        isShattered = true;
 
         // grab bounds + material before hiding
         Bounds bounds = rend.bounds;
         Material mat = rend.material;
 
-        // hide the original target
-        rend.enabled = false;
-        if (col != null) col.enabled = false;
+        // hide original object visuals + collision
+        for (int i = 0; i < cachedRenderers.Length; i++)
+        {
+            if (cachedRenderers[i] != null)
+                cachedRenderers[i].enabled = false;
+        }
 
-        // detach any TMP text children so they fly off with the explosion
+        for (int i = 0; i < cachedColliders.Length; i++)
+        {
+            if (cachedColliders[i] != null)
+                cachedColliders[i].enabled = false;
+        }
+
+        // spawn TMP clones so original hierarchy stays intact for reset
         foreach (var tmp in GetComponentsInChildren<TextMeshPro>())
         {
-            tmp.transform.SetParent(null);
+            GameObject textClone = Instantiate(tmp.gameObject, tmp.transform.position, tmp.transform.rotation);
+            textClone.transform.localScale = tmp.transform.lossyScale;
+
+            // remove this component on clones to avoid recursive shatter behavior
+            MenuShatter cloneShatter = textClone.GetComponent<MenuShatter>();
+            if (cloneShatter != null) Destroy(cloneShatter);
+
             // add a collider roughly matching the text bounds
-            BoxCollider textCol = tmp.gameObject.AddComponent<BoxCollider>();
+            BoxCollider textCol = textClone.AddComponent<BoxCollider>();
             textCol.size = tmp.bounds.size;
-            Rigidbody textRb = tmp.gameObject.AddComponent<Rigidbody>();
-            Vector3 dir = (tmp.transform.position - impactPoint).normalized;
+            Rigidbody textRb = textClone.AddComponent<Rigidbody>();
+            Vector3 dir = (textClone.transform.position - impactPoint).normalized;
             textRb.AddForce(dir * explosionForce, ForceMode.Impulse);
             textRb.AddTorque(Random.insideUnitSphere * explosionForce * 0.5f, ForceMode.Impulse);
-            Destroy(tmp.gameObject, fragmentLifetime);
+
+            spawnedPieces.Add(textClone);
+            Destroy(textClone, lifetime);
         }
 
         // lazy-load primitive cube mesh
@@ -80,7 +111,32 @@ public class MenuShatter : MonoBehaviour
             // add a bit of random torque for tumble
             rb.AddTorque(Random.insideUnitSphere * explosionForce * 0.5f, ForceMode.Impulse);
 
-            Destroy(frag, fragmentLifetime);
+            spawnedPieces.Add(frag);
+            Destroy(frag, lifetime);
         }
+    }
+
+    public void ResetShatter()
+    {
+        for (int i = 0; i < spawnedPieces.Count; i++)
+        {
+            if (spawnedPieces[i] != null)
+                Destroy(spawnedPieces[i]);
+        }
+        spawnedPieces.Clear();
+
+        for (int i = 0; i < cachedRenderers.Length; i++)
+        {
+            if (cachedRenderers[i] != null)
+                cachedRenderers[i].enabled = true;
+        }
+
+        for (int i = 0; i < cachedColliders.Length; i++)
+        {
+            if (cachedColliders[i] != null)
+                cachedColliders[i].enabled = true;
+        }
+
+        isShattered = false;
     }
 }

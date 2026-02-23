@@ -85,6 +85,8 @@ public class MainMenuSmashController : MonoBehaviour
     // settings state
     Vector3 playerStartPos;
     Quaternion playerStartRot;
+    readonly List<Renderer> forcedHiddenRenderers = new List<Renderer>();
+    readonly List<Collider> forcedHiddenColliders = new List<Collider>();
 
     void Start()
     {
@@ -119,6 +121,8 @@ public class MainMenuSmashController : MonoBehaviour
 
         if (skinPreview == null)
             skinPreview = FindAnyObjectByType<PlayerSkinApplier>();
+
+        ResetMenuShatters();
 
         // auto-attach collision forwarder to the player ball
         if (player != null)
@@ -301,6 +305,7 @@ public class MainMenuSmashController : MonoBehaviour
     {
         // let the shatter play out before moving the camera
         yield return new WaitForSeconds(settingsDelay);
+        ResetMenuShatters();
 
         state = MenuState.Settings;
 
@@ -333,6 +338,10 @@ public class MainMenuSmashController : MonoBehaviour
     {
         // let the shatter play out before moving to skins view
         yield return new WaitForSeconds(skinsDelay);
+        EnsureSelectedTargetShattered();
+        // while in skins view: reset everything except the smashed skins button
+        ResetMenuShatters(GetSelectedTargetShatter());
+        ForceHideSelectedTargetWhileInSkins();
 
         state = MenuState.Skins;
 
@@ -387,7 +396,12 @@ public class MainMenuSmashController : MonoBehaviour
         {
             // keep preview stable even if physics/contact tries to push the ball
             if (lockPlayerToSkinsPoint && skinsPlayerPoint != null)
-                player.position = skinsPlayerPoint.position;
+            {
+                if (playerRb != null)
+                    playerRb.position = skinsPlayerPoint.position;
+                else
+                    player.position = skinsPlayerPoint.position;
+            }
 
             if (playerRb != null)
             {
@@ -412,17 +426,14 @@ public class MainMenuSmashController : MonoBehaviour
     void ExitSettings()
     {
         state = MenuState.Aiming;
+        ResetMenuShatters(GetSelectedTargetShatter());
 
         if (settingsPanel != null)
             settingsPanel.SetActive(false);
 
         // reset ball to original position first so camera computes correctly
         if (player != null && playerRb != null)
-        {
-            playerRb.linearVelocity = Vector3.zero;
-            playerRb.angularVelocity = Vector3.zero;
-            player.position = playerStartPos;
-        }
+            TeleportPlayer(playerStartPos, playerStartRot);
 
         // recompute camera for the current target from the reset player position
         if (menuCamera != null && targets.Count > 0)
@@ -444,19 +455,36 @@ public class MainMenuSmashController : MonoBehaviour
 
     void ExitSkins()
     {
+        Vector3 beforePos = player != null ? player.position : Vector3.zero;
+        Quaternion beforeRot = player != null ? player.rotation : Quaternion.identity;
+        Vector3 beforeVel = playerRb != null ? playerRb.linearVelocity : Vector3.zero;
+        Vector3 beforeAngVel = playerRb != null ? playerRb.angularVelocity : Vector3.zero;
+        Debug.Log(
+            $"[Menu][ExitSkins] BEGIN frame={Time.frameCount} state={state} " +
+            $"beforePos={beforePos} beforeRotY={beforeRot.eulerAngles.y:F2} " +
+            $"beforeVel={beforeVel} beforeAngVel={beforeAngVel}");
+
         state = MenuState.Aiming;
+        // when leaving skins: fully reset, including the skins button
+        ResetMenuShatters();
+        RestoreForcedHiddenSelectedTarget();
 
         if (skinsPanel != null)
             skinsPanel.SetActive(false);
 
         // reset ball to original position/rotation
         if (player != null && playerRb != null)
-        {
-            playerRb.linearVelocity = Vector3.zero;
-            playerRb.angularVelocity = Vector3.zero;
-            player.position = playerStartPos;
-            player.rotation = playerStartRot;
-        }
+            TeleportPlayer(playerStartPos, playerStartRot);
+
+        Debug.Log(
+            $"[Menu][ExitSkins] AFTER_RESET frame={Time.frameCount} " +
+            $"targetPos={playerStartPos} targetRotY={playerStartRot.eulerAngles.y:F2} " +
+            $"actualPos={(player != null ? player.position : Vector3.zero)} " +
+            $"actualRotY={(player != null ? player.rotation.eulerAngles.y : 0f):F2} " +
+            $"rbUseGravity={(playerRb != null ? playerRb.useGravity : false)} " +
+            $"rbVel={(playerRb != null ? playerRb.linearVelocity : Vector3.zero)}");
+
+        StartCoroutine(LogExitSkinsFollowup());
 
         // recompute camera for current target from the reset player position
         if (menuCamera != null && targets.Count > 0)
@@ -474,6 +502,44 @@ public class MainMenuSmashController : MonoBehaviour
 
         Cursor.lockState = CursorLockMode.Locked;
         Cursor.visible = false;
+    }
+
+    IEnumerator LogExitSkinsFollowup()
+    {
+        yield return null; // next Update
+        Debug.Log(
+            $"[Menu][ExitSkins] NEXT_UPDATE frame={Time.frameCount} " +
+            $"pos={(player != null ? player.position : Vector3.zero)} " +
+            $"rotY={(player != null ? player.rotation.eulerAngles.y : 0f):F2} " +
+            $"vel={(playerRb != null ? playerRb.linearVelocity : Vector3.zero)}");
+
+        yield return new WaitForFixedUpdate();
+        Debug.Log(
+            $"[Menu][ExitSkins] AFTER_FIXED frame={Time.frameCount} " +
+            $"pos={(player != null ? player.position : Vector3.zero)} " +
+            $"rotY={(player != null ? player.rotation.eulerAngles.y : 0f):F2} " +
+            $"vel={(playerRb != null ? playerRb.linearVelocity : Vector3.zero)} " +
+            $"angVel={(playerRb != null ? playerRb.angularVelocity : Vector3.zero)}");
+    }
+
+    void TeleportPlayer(Vector3 targetPos, Quaternion targetRot)
+    {
+        if (playerRb != null)
+        {
+            playerRb.useGravity = false;
+            playerRb.linearVelocity = Vector3.zero;
+            playerRb.angularVelocity = Vector3.zero;
+            playerRb.position = targetPos;
+            playerRb.rotation = targetRot;
+            playerRb.Sleep();
+            Physics.SyncTransforms();
+        }
+
+        if (player != null)
+        {
+            player.position = targetPos;
+            player.rotation = targetRot;
+        }
     }
 
     // called by settings UI back button
@@ -514,6 +580,90 @@ public class MainMenuSmashController : MonoBehaviour
     {
         if (skinNameLabel == null || skinPreview == null) return;
         skinNameLabel.text = $"Skin: {skinPreview.GetSkinName(skinPreview.SelectedSkinIndex)}";
+    }
+
+    MenuShatter GetSelectedTargetShatter()
+    {
+        if (selectedTarget == null) return null;
+        MenuShatter shatter = selectedTarget.GetComponent<MenuShatter>();
+        if (shatter == null)
+            shatter = selectedTarget.GetComponentInChildren<MenuShatter>();
+        if (shatter == null)
+            shatter = selectedTarget.GetComponentInParent<MenuShatter>();
+        return shatter;
+    }
+
+    void EnsureSelectedTargetShattered()
+    {
+        MenuShatter shatter = GetSelectedTargetShatter();
+        if (shatter != null)
+        {
+            Vector3 impactPoint = player != null ? player.position : Vector3.zero;
+            shatter.Shatter(impactPoint);
+            return;
+        }
+
+        // fallback for targets without MenuShatter component
+        if (selectedTarget != null)
+        {
+            Renderer[] rends = selectedTarget.GetComponentsInChildren<Renderer>(true);
+            for (int i = 0; i < rends.Length; i++)
+                rends[i].enabled = false;
+
+            Collider[] cols = selectedTarget.GetComponentsInChildren<Collider>(true);
+            for (int i = 0; i < cols.Length; i++)
+                cols[i].enabled = false;
+        }
+    }
+
+    void ForceHideSelectedTargetWhileInSkins()
+    {
+        forcedHiddenRenderers.Clear();
+        forcedHiddenColliders.Clear();
+        if (selectedTarget == null) return;
+
+        Renderer[] rends = selectedTarget.GetComponentsInChildren<Renderer>(true);
+        for (int i = 0; i < rends.Length; i++)
+        {
+            if (rends[i] == null) continue;
+            forcedHiddenRenderers.Add(rends[i]);
+            rends[i].enabled = false;
+        }
+
+        Collider[] cols = selectedTarget.GetComponentsInChildren<Collider>(true);
+        for (int i = 0; i < cols.Length; i++)
+        {
+            if (cols[i] == null) continue;
+            forcedHiddenColliders.Add(cols[i]);
+            cols[i].enabled = false;
+        }
+    }
+
+    void RestoreForcedHiddenSelectedTarget()
+    {
+        for (int i = 0; i < forcedHiddenRenderers.Count; i++)
+        {
+            if (forcedHiddenRenderers[i] != null)
+                forcedHiddenRenderers[i].enabled = true;
+        }
+        forcedHiddenRenderers.Clear();
+
+        for (int i = 0; i < forcedHiddenColliders.Count; i++)
+        {
+            if (forcedHiddenColliders[i] != null)
+                forcedHiddenColliders[i].enabled = true;
+        }
+        forcedHiddenColliders.Clear();
+    }
+
+    void ResetMenuShatters(MenuShatter skip = null)
+    {
+        MenuShatter[] shatters = FindObjectsByType<MenuShatter>(FindObjectsSortMode.None);
+        for (int i = 0; i < shatters.Length; i++)
+        {
+            if (shatters[i] == skip) continue;
+            shatters[i].ResetShatter();
+        }
     }
 
     // -- diving --
