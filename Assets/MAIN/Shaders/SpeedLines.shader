@@ -116,7 +116,12 @@ Shader "Custom/SpeedLines"
                 spikeInner = saturate(spikeInner + jitterOffset);
                 float effectiveInner = lerp(1.0, spikeInner, _Intensity);
 
-                float maxDist = 0.5 * _AspectRatio;
+                // per-angle distance to screen edge (ray-box intersection)
+                float cosA = abs(cos(angle));
+                float sinA = abs(sin(angle));
+                float halfW = 0.5 * _AspectRatio;
+                float halfH = 0.5;
+                float maxDist = min(halfW / max(cosA, 0.0001), halfH / max(sinA, 0.0001));
                 float normalizedDist = dist / maxDist;
 
                 if (normalizedDist < effectiveInner || normalizedDist > 1.0)

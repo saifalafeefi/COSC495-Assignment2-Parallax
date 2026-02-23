@@ -12,6 +12,9 @@ public class MenuSettings : MonoBehaviour
     [SerializeField] Slider pixelSizeSlider;
     [SerializeField] TextMeshProUGUI pixelSizeLabel;
 
+    [Header("Speed Lines")]
+    [SerializeField] Toggle speedLinesToggle;
+
     [Header("Skin Selection (Optional)")]
     [SerializeField] PlayerSkinApplier skinPreview;
     [SerializeField] TMP_Dropdown skinDropdown;
@@ -32,6 +35,12 @@ public class MenuSettings : MonoBehaviour
             UpdatePixelLabel(pixelSizeSlider.value);
         }
 
+        if (speedLinesToggle != null)
+        {
+            speedLinesToggle.isOn = SpeedLinesEffect.SharedEnabled;
+            speedLinesToggle.onValueChanged.AddListener(OnSpeedLinesToggled);
+        }
+
         SetupSkinUI();
     }
 
@@ -39,6 +48,9 @@ public class MenuSettings : MonoBehaviour
     {
         if (pixelSizeSlider != null)
             pixelSizeSlider.onValueChanged.RemoveListener(OnPixelSizeChanged);
+
+        if (speedLinesToggle != null)
+            speedLinesToggle.onValueChanged.RemoveListener(OnSpeedLinesToggled);
 
         if (skinDropdown != null)
             skinDropdown.onValueChanged.RemoveListener(OnSkinChangedFromDropdown);
@@ -57,6 +69,12 @@ public class MenuSettings : MonoBehaviour
             live.pixelSize = size;
 
         UpdatePixelLabel(value);
+    }
+
+    void OnSpeedLinesToggled(bool enabled)
+    {
+        SpeedLinesEffect.SharedEnabled = enabled;
+        SpeedLinesEffect.Save();
     }
 
     void UpdatePixelLabel(float value)

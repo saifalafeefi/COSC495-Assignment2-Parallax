@@ -45,6 +45,21 @@ public class SpeedLinesEffect : MonoBehaviour
     private float currentIntensity;
     private float currentRadius;
 
+    // cross-scene toggle — persists via PlayerPrefs
+    public static bool SharedEnabled { get; set; } = true;
+
+    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
+    static void LoadSavedEnabled()
+    {
+        SharedEnabled = PlayerPrefs.GetInt("SpeedLinesEnabled", 1) == 1;
+    }
+
+    public static void Save()
+    {
+        PlayerPrefs.SetInt("SpeedLinesEnabled", SharedEnabled ? 1 : 0);
+        PlayerPrefs.Save();
+    }
+
     private static readonly int IntensityID = Shader.PropertyToID("_Intensity");
     private static readonly int InnerRadiusID = Shader.PropertyToID("_InnerRadius");
     private static readonly int AspectRatioID = Shader.PropertyToID("_AspectRatio");
@@ -100,7 +115,15 @@ public class SpeedLinesEffect : MonoBehaviour
 
     void Update()
     {
-        if (player == null || mat == null) return;
+        if (mat == null) return;
+
+        // if disabled or no player, zero out and bail
+        if (!SharedEnabled || player == null)
+        {
+            currentIntensity = 0f;
+            mat.SetFloat(IntensityID, 0f);
+            return;
+        }
 
         // use our own max speed so turbo/gravity don't instantly cap the effect
         float maxSpd = effectMaxSpeed > 0f ? effectMaxSpeed : player.maxSpeed;
