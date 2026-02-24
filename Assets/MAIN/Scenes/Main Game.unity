@@ -466,50 +466,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &184850488
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 184850490}
-  - component: {fileID: 184850489}
-  m_Layer: 0
-  m_Name: GrassDisplacementManager
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!114 &184850489
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 184850488}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: a5a5033f7080c5549a9cc007d2df0a29, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: MicahW.PointGrassRenderer.Runtime::MicahW.PointGrass.PointGrassDisplacementManager
---- !u!4 &184850490
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 184850488}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -2.1284, y: -0, z: 8.37593}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &221162286
 GameObject:
   m_ObjectHideFlags: 0
@@ -1459,7 +1415,7 @@ BoxCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Size: {x: -117, y: 50, z: 1}
+  m_Size: {x: 117, y: 50, z: 1}
   m_Center: {x: 0, y: 0, z: 0}
 --- !u!1001 &555510922
 PrefabInstance:
@@ -1996,6 +1952,67 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 726742116}
   m_CullTransparentMesh: 1
+--- !u!1 &846026547
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 846026550}
+  - component: {fileID: 846026549}
+  - component: {fileID: 846026548}
+  m_Layer: 0
+  m_Name: GRASS_MANAGER
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &846026548
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 846026547}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a5a5033f7080c5549a9cc007d2df0a29, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: MicahW.PointGrassRenderer.Runtime::MicahW.PointGrass.PointGrassDisplacementManager
+--- !u!114 &846026549
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 846026547}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d938393f58ae1e844b929a6d939683ec, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: MicahW.PointGrassRenderer.Runtime::MicahW.PointGrass.PointGrassWind
+  windScale: 0.25
+  noiseRange: {x: -0.5, y: 1}
+  windDirection: {x: 0.3, y: 0, z: 0.7}
+  windScroll: {x: 0.3, y: 0, z: 0.7}
+--- !u!4 &846026550
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 846026547}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 48.87651, y: 54.37001, z: -8.3887}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &859842022
 GameObject:
   m_ObjectHideFlags: 0
@@ -2395,7 +2412,7 @@ BoxCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Size: {x: -117, y: 50, z: 1}
+  m_Size: {x: 117, y: 50, z: 1}
   m_Center: {x: 0, y: 0, z: 0}
 --- !u!1 &990048852
 GameObject:
@@ -2794,7 +2811,7 @@ BoxCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Size: {x: -117, y: 50, z: 1}
+  m_Size: {x: 117, y: 50, z: 1}
   m_Center: {x: 0, y: 0, z: 0}
 --- !u!1 &1039199344
 GameObject:
@@ -2994,7 +3011,7 @@ BoxCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Size: {x: -117, y: 50, z: 1}
+  m_Size: {x: 117, y: 50, z: 1}
   m_Center: {x: 0, y: 0, z: 0}
 --- !u!1 &1056764247
 GameObject:
@@ -4702,7 +4719,7 @@ BoxCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Size: {x: -117, y: 50, z: 1}
+  m_Size: {x: 117, y: 50, z: 1}
   m_Center: {x: 0, y: 0, z: 0}
 --- !u!4 &1487290974
 Transform:
@@ -4798,54 +4815,6 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 2516502124652177909, guid: 828dcac96820d7d48adc432278bec3df, type: 3}
   m_PrefabInstance: {fileID: 1522959033}
   m_PrefabAsset: {fileID: 0}
---- !u!1 &1533466490
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 1533466492}
-  - component: {fileID: 1533466491}
-  m_Layer: 0
-  m_Name: GrassWind
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!114 &1533466491
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1533466490}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: d938393f58ae1e844b929a6d939683ec, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: MicahW.PointGrassRenderer.Runtime::MicahW.PointGrass.PointGrassWind
-  windScale: 0.25
-  noiseRange: {x: -0.5, y: 1}
-  windDirection: {x: 0.3, y: 0, z: 0.7}
-  windScroll: {x: 0.3, y: 0, z: 0.7}
---- !u!4 &1533466492
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1533466490}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 1.03215, y: 0, z: -58.39322}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1556081311
 GameObject:
   m_ObjectHideFlags: 0
@@ -6287,7 +6256,7 @@ BoxCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Size: {x: -117, y: 50, z: 1}
+  m_Size: {x: 117, y: 50, z: 1}
   m_Center: {x: 0, y: 0, z: 0}
 --- !u!1001 &293482300795216111
 PrefabInstance:
@@ -6696,9 +6665,29 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
-    - target: {fileID: 4802255550460497210, guid: 74189d3b1b090444fb3fca33a5ea1062, type: 3}
-      propertyPath: speed
-      value: 15
+    - target: {fileID: 3381019616229785253, guid: 74189d3b1b090444fb3fca33a5ea1062, type: 3}
+      propertyPath: giantColor.a
+      value: 0.9019608
+      objectReference: {fileID: 0}
+    - target: {fileID: 3381019616229785253, guid: 74189d3b1b090444fb3fca33a5ea1062, type: 3}
+      propertyPath: hauntColor.a
+      value: 0.9019608
+      objectReference: {fileID: 0}
+    - target: {fileID: 3381019616229785253, guid: 74189d3b1b090444fb3fca33a5ea1062, type: 3}
+      propertyPath: hauntColor.r
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 3381019616229785253, guid: 74189d3b1b090444fb3fca33a5ea1062, type: 3}
+      propertyPath: smashColor.a
+      value: 0.9019608
+      objectReference: {fileID: 0}
+    - target: {fileID: 3381019616229785253, guid: 74189d3b1b090444fb3fca33a5ea1062, type: 3}
+      propertyPath: shieldColor.a
+      value: 0.9019608
+      objectReference: {fileID: 0}
+    - target: {fileID: 3381019616229785253, guid: 74189d3b1b090444fb3fca33a5ea1062, type: 3}
+      propertyPath: knockbackColor.a
+      value: 0.9019608
       objectReference: {fileID: 0}
     - target: {fileID: 4802255550460497210, guid: 74189d3b1b090444fb3fca33a5ea1062, type: 3}
       propertyPath: focalPoint
@@ -6862,8 +6851,7 @@ SceneRoots:
   - {fileID: 155143667}
   - {fileID: 382269035}
   - {fileID: 1326120270}
-  - {fileID: 184850490}
-  - {fileID: 1533466492}
   - {fileID: 172624562}
   - {fileID: 1556081312}
   - {fileID: 2078803851}
+  - {fileID: 846026550}

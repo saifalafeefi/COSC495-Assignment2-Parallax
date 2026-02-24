@@ -155,8 +155,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5036a60f22d8542ca830e4578804462b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  speed: 25
+  speed: 15
   maxSpeed: 200
+  focalPoint: {fileID: 0}
   brakingFactor: 3
   gravityMultiplier: 3
   jumpForce: 16
@@ -181,6 +182,7 @@ MonoBehaviour:
   smashSmokeSurfaceOffset: 0
   smashSmokeCornerSpreadBoost: 0.35
   stackSpacing: {x: 1, y: 0.15, z: 1}
+  indicatorYOffset: -0.6
   landingIndicator: {fileID: 0}
   slowMotionScale: 0.15
   diveSpeed: 30
@@ -202,8 +204,8 @@ MonoBehaviour:
   overlayMaterial: {fileID: 0}
   knockbackColor: {r: 1, g: 0.89, b: 0, a: 1}
   smashColor: {r: 1, g: 0, b: 0, a: 1}
-  shieldColor: {r: 0, g: 0.77, b: 1, a: 1}
-  giantColor: {r: 0.11, g: 0.53, b: 0.22, a: 1}
+  shieldColor: {r: 0, g: 0.940083, b: 1, a: 1}
+  giantColor: {r: 0, g: 1, b: 0.26168227, a: 1}
   hauntColor: {r: 0.86, g: 0, b: 1, a: 1}
   noiseScale: 2
   flowSpeed: 3

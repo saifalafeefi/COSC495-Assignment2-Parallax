@@ -118,11 +118,12 @@ Shader "Custom/PowerupOverlay"
                 float n4 = GradientNoise3D(samplePos + float3(t * -1.0, t * 0.5,  t * 0.7))  * 0.5 + 0.5;
                 float n5 = GradientNoise3D(samplePos + float3(t * 0.6,  t * -0.4, t * -1.1)) * 0.5 + 0.5;
 
-                half w1 = n1 * _Weight1;
-                half w2 = n2 * _Weight2;
-                half w3 = n3 * _Weight3;
-                half w4 = n4 * _Weight4;
-                half w5 = n5 * _Weight5;
+                // color alpha controls intensity — lower alpha = weaker tint
+                half w1 = n1 * _Weight1 * _Color1.a;
+                half w2 = n2 * _Weight2 * _Color2.a;
+                half w3 = n3 * _Weight3 * _Color3.a;
+                half w4 = n4 * _Weight4 * _Color4.a;
+                half w5 = n5 * _Weight5 * _Color5.a;
 
                 half sumW = w1 + w2 + w3 + w4 + w5;
 
@@ -136,10 +137,11 @@ Shader "Custom/PowerupOverlay"
                               + _Color4.rgb * (w4 * invSum)
                               + _Color5.rgb * (w5 * invSum);
 
-                    // blend toward white based on how much total weight is active
-                    // so fade-in/out is smooth (partial weight = partial tint)
-                    half blendFactor = saturate(totalWeight);
-                    tintColor = lerp(half3(1,1,1), tintColor, blendFactor);
+                    // blend toward white using alpha-scaled weight so opacity actually controls intensity
+                    half maxAlpha = max(max(max(_Color1.a * _Weight1, _Color2.a * _Weight2),
+                                            max(_Color3.a * _Weight3, _Color4.a * _Weight4)),
+                                        _Color5.a * _Weight5);
+                    tintColor = lerp(half3(1,1,1), tintColor, saturate(maxAlpha));
                 }
 
                 return half4(tintColor, 1);
