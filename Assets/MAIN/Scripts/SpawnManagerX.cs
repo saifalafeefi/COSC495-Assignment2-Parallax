@@ -11,9 +11,10 @@ public class SpawnManagerX : MonoBehaviour
     public GameObject giantPowerupPrefab;
     public GameObject hauntPowerupPrefab;
 
-    private float spawnRangeX = 10;
-    private float spawnZMin = 15;
-    private float spawnZMax = 25;
+    // spawn area tuning — exposed so designers can tweak in Inspector
+    [SerializeField] private float spawnRangeX = 10;
+    [SerializeField] private float spawnZMin = 15;
+    [SerializeField] private float spawnZMax = 25;
 
     public int enemyCount;
     public int waveCount = 1;
@@ -22,13 +23,18 @@ public class SpawnManagerX : MonoBehaviour
     private int powerupCycle = 0; // cycles through: 0=knockback, 1=smash, 2=shield, 3=giant, 4=haunt
     private bool isCountingDown;
 
+    // tracks live powerup pickups so we skip FindGameObjectsWithTag each wave
+    public static int activePowerupCount;
+
     public GameObject player;
     private Vector3 playerStartPos; // saved at start so player resets independently
+    private Rigidbody playerRb;     // cached once instead of GetComponent every wave reset
 
     void Start()
     {
         // remember where the player started
         playerStartPos = player.transform.position;
+        playerRb = player.GetComponent<Rigidbody>();
     }
 
     void Update()
@@ -39,7 +45,8 @@ public class SpawnManagerX : MonoBehaviour
             return;
         }
 
-        enemyCount = GameObject.FindGameObjectsWithTag("Enemy").Length;
+        // use static counter instead of FindGameObjectsWithTag every frame
+        enemyCount = EnemyX.aliveCount;
 
         if (enemyCount == 0 && !isCountingDown)
         {
@@ -82,14 +89,8 @@ public class SpawnManagerX : MonoBehaviour
 
     void SpawnEnemyWave(int enemiesToSpawn)
     {
-        // spawn a powerup if none exist, cycling: knockback → smash → shield
-        bool hasKnockback = GameObject.FindGameObjectsWithTag("KnockbackPowerup").Length > 0;
-        bool hasSmash = GameObject.FindGameObjectsWithTag("SmashPowerup").Length > 0;
-        bool hasShield = GameObject.FindGameObjectsWithTag("ShieldPowerup").Length > 0;
-        bool hasGiant = GameObject.FindGameObjectsWithTag("GiantPowerup").Length > 0;
-        bool hasHaunt = GameObject.FindGameObjectsWithTag("HauntPowerup").Length > 0;
-
-        if (!hasKnockback && !hasSmash && !hasShield && !hasGiant && !hasHaunt)
+        // spawn a powerup if none exist (static counter replaces 5x FindGameObjectsWithTag)
+        if (activePowerupCount <= 0)
         {
             GameObject prefab = null;
             if (powerupCycle == 0 && knockbackPowerupPrefab != null)
@@ -108,7 +109,11 @@ public class SpawnManagerX : MonoBehaviour
                 prefab = knockbackPowerupPrefab;
 
             if (prefab != null)
-                Instantiate(prefab, GenerateSpawnPosition() + prefab.transform.position, prefab.transform.rotation);
+            {
+                GameObject spawned = Instantiate(prefab, GenerateSpawnPosition() + prefab.transform.position, prefab.transform.rotation);
+                // attach tracker so activePowerupCount stays in sync when picked up or destroyed
+                spawned.AddComponent<PowerupTracker>();
+            }
 
             powerupCycle = (powerupCycle + 1) % 5;
         }
@@ -133,7 +138,24 @@ public class SpawnManagerX : MonoBehaviour
     void ResetPlayerPosition()
     {
         player.transform.position = playerStartPos;
-        player.GetComponent<Rigidbody>().linearVelocity = Vector3.zero;
-        player.GetComponent<Rigidbody>().angularVelocity = Vector3.zero;
+        playerRb.linearVelocity = Vector3.zero;
+        playerRb.angularVelocity = Vector3.zero;
     }
+
+    // reset statics between scenes
+    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+    static void ResetStatics()
+    {
+        activePowerupCount = 0;
+    }
+}
+
+/// <summary>
+/// lightweight tracker added to spawned powerups — keeps SpawnManagerX.activePowerupCount
+/// in sync without needing FindGameObjectsWithTag each wave
+/// </summary>
+public class PowerupTracker : MonoBehaviour
+{
+    void Start() { SpawnManagerX.activePowerupCount++; }
+    void OnDestroy() { SpawnManagerX.activePowerupCount--; }
 }

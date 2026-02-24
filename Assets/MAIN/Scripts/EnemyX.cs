@@ -4,14 +4,20 @@ using UnityEngine;
 
 public class EnemyX : MonoBehaviour
 {
-    public float speed;
+    public float speed = 10f;
     private Rigidbody enemyRb;
     public GameObject playerGoal;
+
+    // static enemy count — lets SpawnManagerX check without FindGameObjectsWithTag every frame
+    public static int aliveCount;
+
+    // cached goal references — found once, reused by all enemies
+    private static GameObject cachedPlayerGoal;
+    private static GameObject cachedEnemyGoal;
 
     // after getting hit, enemy drifts toward its own goal briefly
     public float stunSpeed = 3f;        // how hard it moves toward enemy goal while stunned
     public float stunDuration = 1.5f;   // how long the stun lasts
-    private GameObject enemyGoal;
     private bool isStunned;
     private float stunTimer;
 
@@ -54,17 +60,16 @@ public class EnemyX : MonoBehaviour
     void Start()
     {
         enemyRb = GetComponent<Rigidbody>();
+        aliveCount++;
 
-        if (speed <= 0)
-        {
-            speed = 10f;
-        }
+        // use cached static refs so only the first enemy pays the Find() cost
+        if (cachedPlayerGoal == null)
+            cachedPlayerGoal = GameObject.Find("Player Goal");
+        if (cachedEnemyGoal == null)
+            cachedEnemyGoal = GameObject.Find("Enemy Goal");
 
         if (playerGoal == null)
-        {
-            playerGoal = GameObject.Find("Player Goal");
-        }
-        enemyGoal = GameObject.Find("Enemy Goal");
+            playerGoal = cachedPlayerGoal;
     }
 
     void Update()
@@ -80,9 +85,9 @@ public class EnemyX : MonoBehaviour
                 isHaunted = false;
                 if (hauntVfxInstance != null) Destroy(hauntVfxInstance);
             }
-            else if (enemyGoal != null)
+            else if (cachedEnemyGoal != null)
             {
-                Vector3 toGoal = (enemyGoal.transform.position - transform.position).normalized;
+                Vector3 toGoal = (cachedEnemyGoal.transform.position - transform.position).normalized;
                 enemyRb.AddForce(toGoal * hauntMoveSpeed, ForceMode.Force);
             }
             return;
@@ -96,9 +101,9 @@ public class EnemyX : MonoBehaviour
             {
                 isStunned = false;
             }
-            else if (enemyGoal != null)
+            else if (cachedEnemyGoal != null)
             {
-                Vector3 retreatDirection = (enemyGoal.transform.position - transform.position).normalized;
+                Vector3 retreatDirection = (cachedEnemyGoal.transform.position - transform.position).normalized;
                 enemyRb.AddForce(retreatDirection * stunSpeed * Time.deltaTime);
             }
             return;
@@ -146,7 +151,18 @@ public class EnemyX : MonoBehaviour
 
     void OnDestroy()
     {
+        aliveCount--;
         if (hauntVfxInstance != null) Destroy(hauntVfxInstance);
+    }
+
+    // reset statics between scenes so stale refs don't carry over
+    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+    static void ResetStatics()
+    {
+        aliveCount = 0;
+        cachedPlayerGoal = null;
+        cachedEnemyGoal = null;
+        hauntVfxPrefab = null;
     }
 
     // colored sphere gizmo for status (only visible with Gizmos enabled in Scene/Game view)

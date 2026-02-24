@@ -8,7 +8,7 @@ public class PlayerControllerX : MonoBehaviour
     private Rigidbody playerRb;
     public float speed = 15;
     public float maxSpeed = 20f; // top speed the player can reach
-    private GameObject focalPoint;
+    [SerializeField] private GameObject focalPoint; // wire in Inspector instead of GameObject.Find
     public float brakingFactor = 5f; // how fast you stop when changing direction
     public float gravityMultiplier = 2.5f; // extra gravity so the ball doesn't feel floaty
     public float jumpForce = 8f; // upward impulse on jump
@@ -93,6 +93,7 @@ public class PlayerControllerX : MonoBehaviour
     // stacking visuals — each stack spawns a slightly larger copy of the indicator
     // X/Z = scale growth per stack, Y = vertical position offset per stack
     public Vector3 stackSpacing = new Vector3(0.3f, 0.15f, 0.3f);
+    [SerializeField] private float indicatorYOffset = -0.6f; // vertical offset below player for indicators
     private List<GameObject> knockbackIndicators = new List<GameObject>();
     private List<GameObject> smashIndicators = new List<GameObject>();
     private List<GameObject> shieldIndicators = new List<GameObject>();
@@ -127,11 +128,14 @@ public class PlayerControllerX : MonoBehaviour
     private LineRenderer aimLine;
     private Coroutine turboSmokeCoroutine;
     private ParticleSystem runtimeTurboSmokeFx;
+    private static Shader cachedSpriteShader; // avoid Shader.Find every Start
 
     void Start()
     {
         playerRb = GetComponent<Rigidbody>();
-        focalPoint = GameObject.Find("Focal Point");
+        // fallback if not wired in Inspector (backwards-compat with existing scenes)
+        if (focalPoint == null)
+            focalPoint = GameObject.Find("Focal Point");
         lastMoveDirection = transform.forward;
         lastMoveDirection.y = 0f;
         if (lastMoveDirection.sqrMagnitude < 0.001f) lastMoveDirection = Vector3.forward;
@@ -170,11 +174,13 @@ public class PlayerControllerX : MonoBehaviour
             landingIndicator.layer = LayerMask.NameToLayer("Ignore Raycast");
         }
 
-        // create aim line renderer
+        // create aim line renderer (shader cached statically so Find only runs once across all loads)
+        if (cachedSpriteShader == null)
+            cachedSpriteShader = Shader.Find("Sprites/Default");
         aimLine = gameObject.AddComponent<LineRenderer>();
         aimLine.startWidth = 0.1f;
         aimLine.endWidth = 0.1f;
-        aimLine.material = new Material(Shader.Find("Sprites/Default"));
+        aimLine.material = new Material(cachedSpriteShader);
         aimLine.startColor = Color.red;
         aimLine.endColor = Color.red;
         aimLine.positionCount = 2;
@@ -298,42 +304,22 @@ public class PlayerControllerX : MonoBehaviour
             }
         }
 
-        // position originals + extra clones under the player (Y = vertical offset per stack)
-        Vector3 indicatorPos = transform.position + new Vector3(0, -0.6f, 0);
+        // position originals + extra clones under the player (reusable helper eliminates 5x copy-paste)
+        Vector3 indicatorPos = transform.position + new Vector3(0, indicatorYOffset, 0);
 
-        if (powerupIndicator != null)
-            powerupIndicator.transform.position = indicatorPos;
-        for (int i = 0; i < knockbackIndicators.Count; i++)
-            if (knockbackIndicators[i] != null)
-                knockbackIndicators[i].transform.position = indicatorPos + new Vector3(0, (i + 1) * stackSpacing.y * knockbackStackMultiplier.y, 0);
+        UpdateIndicatorPosition(powerupIndicator, knockbackIndicators, knockbackStackMultiplier, indicatorPos);
+        UpdateIndicatorPosition(smashPowerupIndicator, smashIndicators, smashStackMultiplier, indicatorPos);
+        UpdateIndicatorPosition(giantPowerupIndicator, giantIndicators, giantStackMultiplier, indicatorPos);
+        UpdateIndicatorPosition(hauntIndicator, hauntIndicators, hauntStackMultiplier, indicatorPos);
 
-        if (smashPowerupIndicator != null)
-            smashPowerupIndicator.transform.position = indicatorPos;
-        for (int i = 0; i < smashIndicators.Count; i++)
-            if (smashIndicators[i] != null)
-                smashIndicators[i].transform.position = indicatorPos + new Vector3(0, (i + 1) * stackSpacing.y * smashStackMultiplier.y, 0);
-
+        // shield is special: centered on player, scales to radius
         if (shieldIndicator != null)
         {
             shieldIndicator.transform.position = transform.position;
             float diameter = shieldRadius * 2f;
             shieldIndicator.transform.localScale = new Vector3(diameter, diameter, diameter);
         }
-        for (int i = 0; i < shieldIndicators.Count; i++)
-            if (shieldIndicators[i] != null)
-                shieldIndicators[i].transform.position = transform.position + new Vector3(0, (i + 1) * stackSpacing.y * shieldStackMultiplier.y, 0);
-
-        if (giantPowerupIndicator != null)
-            giantPowerupIndicator.transform.position = indicatorPos;
-        for (int i = 0; i < giantIndicators.Count; i++)
-            if (giantIndicators[i] != null)
-                giantIndicators[i].transform.position = indicatorPos + new Vector3(0, (i + 1) * stackSpacing.y * giantStackMultiplier.y, 0);
-
-        if (hauntIndicator != null)
-            hauntIndicator.transform.position = indicatorPos;
-        for (int i = 0; i < hauntIndicators.Count; i++)
-            if (hauntIndicators[i] != null)
-                hauntIndicators[i].transform.position = indicatorPos + new Vector3(0, (i + 1) * stackSpacing.y * hauntStackMultiplier.y, 0);
+        UpdateIndicatorPosition(null, shieldIndicators, shieldStackMultiplier, transform.position);
 
         // giant: squish enemies on contact (overlap, not collision, so no physics push)
         if (isGiant)
@@ -685,6 +671,16 @@ public class PlayerControllerX : MonoBehaviour
         foreach (GameObject ind in list)
             if (ind != null) Destroy(ind);
         list.Clear();
+    }
+
+    // shared positioning logic for all indicator types (replaces 5x copy-pasted blocks)
+    void UpdateIndicatorPosition(GameObject indicator, List<GameObject> extras, Vector3 multiplier, Vector3 basePos)
+    {
+        if (indicator != null)
+            indicator.transform.position = basePos;
+        for (int i = 0; i < extras.Count; i++)
+            if (extras[i] != null)
+                extras[i].transform.position = basePos + new Vector3(0, (i + 1) * stackSpacing.y * multiplier.y, 0);
     }
 
     // knockback wears off one stack at a time
