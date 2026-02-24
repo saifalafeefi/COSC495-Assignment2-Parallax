@@ -4,20 +4,23 @@ using UnityEngine;
 
 public class EnemyX : MonoBehaviour
 {
-    public float speed = 10f;
-    private Rigidbody enemyRb;
-    public GameObject playerGoal;
+    [SerializeField] protected float speed = 10f;
+    protected Rigidbody enemyRb;
+    [SerializeField] protected GameObject playerGoal;
 
     // static enemy count — lets SpawnManagerX check without FindGameObjectsWithTag every frame
     public static int aliveCount;
 
     // cached goal references — found once, reused by all enemies
     private static GameObject cachedPlayerGoal;
-    private static GameObject cachedEnemyGoal;
+    protected static GameObject cachedEnemyGoal;
+
+    // cached player transform — found once, reused by subclasses (e.g. aggressive ram)
+    protected static Transform cachedPlayerTransform;
 
     // after getting hit, enemy drifts toward its own goal briefly
-    public float stunSpeed = 3f;        // how hard it moves toward enemy goal while stunned
-    public float stunDuration = 1.5f;   // how long the stun lasts
+    [SerializeField] private float stunSpeed = 3f;
+    [SerializeField] private float stunDuration = 1.5f;
     private bool isStunned;
     private float stunTimer;
 
@@ -67,10 +70,21 @@ public class EnemyX : MonoBehaviour
             cachedPlayerGoal = GameObject.Find("Player Goal");
         if (cachedEnemyGoal == null)
             cachedEnemyGoal = GameObject.Find("Enemy Goal");
+        if (cachedPlayerTransform == null)
+        {
+            GameObject playerObj = GameObject.FindWithTag("Player");
+            if (playerObj != null)
+                cachedPlayerTransform = playerObj.transform;
+        }
 
         if (playerGoal == null)
             playerGoal = cachedPlayerGoal;
+
+        OnStart();
     }
+
+    // override in subclasses for type-specific init (e.g. random timer offsets)
+    protected virtual void OnStart() { }
 
     void Update()
     {
@@ -109,9 +123,14 @@ public class EnemyX : MonoBehaviour
             return;
         }
 
-        // normal: move toward player goal
-        Vector3 lookDirection = (playerGoal.transform.position - transform.position).normalized;
-        enemyRb.AddForce(lookDirection * speed * Time.deltaTime);
+        Move();
+    }
+
+    // override in subclasses for type-specific movement
+    protected virtual void Move()
+    {
+        Vector3 goalDirection = (playerGoal.transform.position - transform.position).normalized;
+        enemyRb.AddForce(goalDirection * speed * Time.deltaTime);
     }
 
     private void OnCollisionEnter(Collision other)
@@ -162,6 +181,7 @@ public class EnemyX : MonoBehaviour
         aliveCount = 0;
         cachedPlayerGoal = null;
         cachedEnemyGoal = null;
+        cachedPlayerTransform = null;
         hauntVfxPrefab = null;
     }
 
