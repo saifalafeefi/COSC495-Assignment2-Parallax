@@ -1166,11 +1166,12 @@ public class PlayerControllerX : MonoBehaviour
     // bump enemies away on contact
     private void OnCollisionEnter(Collision other)
     {
-        // any collision during dive = landed
+        // any collision during dive = landed, skip knockback so physics doesn't fight the dive
         if (isDiving)
         {
             diveCollided = true;
             RecordDiveImpact(other);
+            return;
         }
 
         if (other.gameObject.CompareTag("Enemy"))
