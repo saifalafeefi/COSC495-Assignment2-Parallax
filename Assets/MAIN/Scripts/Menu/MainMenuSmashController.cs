@@ -1,5 +1,6 @@
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using UnityEngine.EventSystems;
 using System.Collections;
 using System.Collections.Generic;
 using TMPro;
@@ -9,7 +10,7 @@ using UnityEditor;
 
 public class MainMenuSmashController : MonoBehaviour
 {
-    enum MenuState { Aiming, Diving, Impact, TransitionOut, Settings, Skins }
+    enum MenuState { Aiming, Diving, Impact, TransitionOut, Settings, Skins, BiomeSelection }
 
     [Header("References")]
     [SerializeField] Transform player;
@@ -62,6 +63,12 @@ public class MainMenuSmashController : MonoBehaviour
     [SerializeField] bool lockPlayerToSkinsPoint = true;
     [SerializeField] PlayerSkinApplier skinPreview;
     [SerializeField] TextMeshProUGUI skinNameLabel;
+
+    [Header("Biome Selection")]
+    [SerializeField] Transform biomeCameraPoint;
+    [SerializeField] GameObject biomePanel;
+    [SerializeField] float biomeDelay = 0.8f;
+    [SerializeField] List<BiomeEntry> biomes = new List<BiomeEntry>();
 
     [Header("Visuals (Optional)")]
     [SerializeField] LineRenderer aimLine;
@@ -118,6 +125,8 @@ public class MainMenuSmashController : MonoBehaviour
             settingsPanel.SetActive(false);
         if (skinsPanel != null)
             skinsPanel.SetActive(false);
+        if (biomePanel != null)
+            biomePanel.SetActive(false);
 
         if (skinPreview == null)
             skinPreview = FindAnyObjectByType<PlayerSkinApplier>();
@@ -156,6 +165,8 @@ public class MainMenuSmashController : MonoBehaviour
             UpdateSettings();
         else if (state == MenuState.Skins)
             UpdateSkins();
+        else if (state == MenuState.BiomeSelection)
+            UpdateBiomeSelection();
     }
 
     void FixedUpdate()
@@ -749,6 +760,13 @@ public class MainMenuSmashController : MonoBehaviour
             yield break;
         }
 
+        // start goes to biome selection if biomes are configured
+        if (selectedTarget.OptionType == MenuOption.Start && biomes.Count > 0 && biomePanel != null)
+        {
+            StartCoroutine(TransitionToBiomeSelection());
+            yield break;
+        }
+
         yield return new WaitForSeconds(transitionDelay);
         ExecuteOption(selectedTarget.OptionType);
     }
@@ -777,5 +795,138 @@ public class MainMenuSmashController : MonoBehaviour
 #endif
                 break;
         }
+    }
+
+    // -- biome selection --
+
+    IEnumerator TransitionToBiomeSelection()
+    {
+        yield return new WaitForSeconds(biomeDelay);
+        ResetMenuShatters();
+
+        state = MenuState.BiomeSelection;
+
+        // freeze the ball
+        if (playerRb != null)
+        {
+            playerRb.useGravity = false;
+            playerRb.linearVelocity = Vector3.zero;
+            playerRb.angularVelocity = Vector3.zero;
+        }
+
+        // tween camera to biome view
+        if (biomeCameraPoint != null && menuCamera != null)
+        {
+            tweenFromPos = menuCamera.transform.position;
+            tweenFromRot = menuCamera.transform.rotation;
+            tweenToPos = biomeCameraPoint.position;
+            tweenToRot = biomeCameraPoint.rotation;
+            tweenProgress = 0f;
+        }
+
+        if (biomePanel != null)
+            biomePanel.SetActive(true);
+
+        // wire event triggers on each biome thumbnail at runtime
+        for (int i = 0; i < biomes.Count; i++)
+        {
+            if (biomes[i].thumbnail == null) continue;
+
+            var trigger = biomes[i].thumbnail.GetComponent<EventTrigger>();
+            if (trigger == null)
+                trigger = biomes[i].thumbnail.gameObject.AddComponent<EventTrigger>();
+
+            trigger.triggers.Clear();
+
+            int index = i; // capture for closures
+
+            // pointer enter — highlight
+            var enterEntry = new EventTrigger.Entry { eventID = EventTriggerType.PointerEnter };
+            enterEntry.callback.AddListener(_ => OnBiomeHover(index));
+            trigger.triggers.Add(enterEntry);
+
+            // pointer exit — unhighlight
+            var exitEntry = new EventTrigger.Entry { eventID = EventTriggerType.PointerExit };
+            exitEntry.callback.AddListener(_ => OnBiomeUnhover(index));
+            trigger.triggers.Add(exitEntry);
+
+            // click — load scene
+            var clickEntry = new EventTrigger.Entry { eventID = EventTriggerType.PointerClick };
+            clickEntry.callback.AddListener(_ => OnBiomeClick(index));
+            trigger.triggers.Add(clickEntry);
+
+            // disable outline by default
+            if (biomes[i].outline != null)
+                biomes[i].outline.enabled = false;
+        }
+
+        // unlock cursor for interaction
+        Cursor.lockState = CursorLockMode.None;
+        Cursor.visible = true;
+    }
+
+    void UpdateBiomeSelection()
+    {
+        if (Input.GetKeyDown(KeyCode.Escape) || Input.GetKeyDown(KeyCode.Backspace))
+            ExitBiomeSelection();
+    }
+
+    void OnBiomeHover(int index)
+    {
+        // disable all outlines, enable hovered one
+        for (int i = 0; i < biomes.Count; i++)
+        {
+            if (biomes[i].outline != null)
+                biomes[i].outline.enabled = (i == index);
+        }
+    }
+
+    void OnBiomeUnhover(int index)
+    {
+        if (index >= 0 && index < biomes.Count && biomes[index].outline != null)
+            biomes[index].outline.enabled = false;
+    }
+
+    void OnBiomeClick(int index)
+    {
+        if (index < 0 || index >= biomes.Count) return;
+        SceneManager.LoadScene(biomes[index].sceneName);
+    }
+
+    void ExitBiomeSelection()
+    {
+        state = MenuState.Aiming;
+        ResetMenuShatters();
+
+        if (biomePanel != null)
+            biomePanel.SetActive(false);
+
+        // reset ball to original position
+        if (player != null && playerRb != null)
+            TeleportPlayer(playerStartPos, playerStartRot);
+
+        // recompute camera for the current target
+        if (menuCamera != null && targets.Count > 0)
+        {
+            ComputeCameraForTarget(targets[currentIndex], out Vector3 returnPos, out Quaternion returnRot);
+            tweenFromPos = menuCamera.transform.position;
+            tweenFromRot = menuCamera.transform.rotation;
+            tweenToPos = returnPos;
+            tweenToRot = returnRot;
+            tweenProgress = 0f;
+        }
+
+        HighlightTarget(currentIndex);
+        if (screenCrosshair != null) screenCrosshair.gameObject.SetActive(true);
+
+        Cursor.lockState = CursorLockMode.Locked;
+        Cursor.visible = false;
+    }
+
+    // called by biome panel back button
+    public void OnBiomeSelectionBack()
+    {
+        if (state == MenuState.BiomeSelection)
+            ExitBiomeSelection();
     }
 }

@@ -17,6 +17,9 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/MAIN/Scenes/Biome 3/Biome 3.unity
     guid: fcc5ee42fdd3b314790402211d386dd1
+  - enabled: 1
+    path: Assets/MAIN/Scenes/Biome 4/Biome 4.unity
+    guid: bc498a4274fa2d8418979119d7fc5b59
   m_configObjects:
     com.unity.input.settings.actions: {fileID: -944628639613478452, guid: 052faaac586de48259a63d0c4782560b, type: 3}
   m_UseUCBPForAssetBundles: 0
