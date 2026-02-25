@@ -102,8 +102,8 @@ Material:
     - _GlossMapScale: 0
     - _Glossiness: 0
     - _GlossyReflections: 0
-    - _InnerRadius: 0.51948583
-    - _Intensity: 0.4756163
+    - _InnerRadius: 0.8998681
+    - _Intensity: 0.000055968896
     - _Jitter: 0.2
     - _JitterSpeed: 8
     - _LengthVariation: 0.6
@@ -121,7 +121,7 @@ Material:
     - _Surface: 0
     - _ThicknessVariation: 0.2
     - _TipThickness: 0.1
-    - _UnscaledTime: 11.312254
+    - _UnscaledTime: 13.307747
     - _WorkflowMode: 1
     - _XRMotionVectorsPass: 1
     - _ZWrite: 1
