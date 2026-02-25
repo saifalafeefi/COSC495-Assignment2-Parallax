@@ -202,11 +202,11 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PlayerPowerupColor
   overlayMaterial: {fileID: 0}
-  knockbackColor: {r: 1, g: 0.89, b: 0, a: 1}
-  smashColor: {r: 1, g: 0, b: 0, a: 1}
-  shieldColor: {r: 0, g: 0.940083, b: 1, a: 1}
-  giantColor: {r: 0, g: 1, b: 0.26168227, a: 1}
-  hauntColor: {r: 0.86, g: 0, b: 1, a: 1}
+  knockbackColor: {r: 1, g: 0.89, b: 0, a: 0.9019608}
+  smashColor: {r: 1, g: 0, b: 0, a: 0.9019608}
+  shieldColor: {r: 0, g: 0.940083, b: 1, a: 0.9019608}
+  giantColor: {r: 0, g: 1, b: 0.26168227, a: 0.9019608}
+  hauntColor: {r: 1, g: 0, b: 1, a: 0.9019608}
   noiseScale: 2
   flowSpeed: 3
   fadeSpeed: 3
