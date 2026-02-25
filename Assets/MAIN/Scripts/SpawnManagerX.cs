@@ -2,15 +2,6 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-[System.Serializable]
-public struct EnemySpawnWeight
-{
-    public float normal;
-    public float aggressive;
-    public float evasive;
-    public float tank;
-}
-
 public class SpawnManagerX : MonoBehaviour
 {
     [Header("Enemy Prefabs")]
@@ -22,12 +13,11 @@ public class SpawnManagerX : MonoBehaviour
     // backward compat — falls back to this if normalEnemyPrefab isn't assigned
     public GameObject enemyPrefab;
 
-    [Header("Spawn Weights")]
-    [SerializeField] private EnemySpawnWeight baseWeights = new EnemySpawnWeight { normal = 1f, aggressive = 0f, evasive = 0f, tank = 0f };
-    [SerializeField] private EnemySpawnWeight weightScalePerWave = new EnemySpawnWeight { normal = 0f, aggressive = 0.15f, evasive = 0.1f, tank = 0.05f };
-    [SerializeField] private int aggressiveStartWave = 3;
-    [SerializeField] private int evasiveStartWave = 5;
-    [SerializeField] private int tankStartWave = 7;
+    [Header("Enemy Spawn Chances")]
+    [SerializeField, Range(0f, 1f)] private float normalChance = 0.5f;
+    [SerializeField, Range(0f, 1f)] private float aggressiveChance = 0.2f;
+    [SerializeField, Range(0f, 1f)] private float evasiveChance = 0.15f;
+    [SerializeField, Range(0f, 1f)] private float tankChance = 0.15f;
 
     [Header("Powerup Prefabs")]
     [SerializeField] private GameObject knockbackPowerupPrefab;
@@ -42,13 +32,20 @@ public class SpawnManagerX : MonoBehaviour
     [SerializeField] private float spawnZMin = 15;
     [SerializeField] private float spawnZMax = 25;
 
+    [Header("Powerup Spawning")]
+    [SerializeField] private Transform[] powerupSpawnPoints;       // drop empty GameObjects where you want powerups to appear
+    [SerializeField] private float scorePowerupChance = 0.5f;      // 0-1 chance per enemy scored
+    [SerializeField] private float powerupDroughtTime = 30f;       // seconds without powerup before auto-spawn
+    [SerializeField] private int maxActivePowerups = 2;             // cap on simultaneous powerups
+
     [Header("Waves")]
     [SerializeField] private int waveCount = 1;
     [SerializeField] private float waveCooldown = 3f; // seconds between waves
 
     private int enemyCount;
-    private int powerupCycle = 0; // cycles through: 0=knockback, 1=smash, 2=shield, 3=giant, 4=haunt
     private bool isCountingDown;
+    private float timeSinceLastPowerup;
+    private List<GameObject> powerupPrefabPool = new List<GameObject>(); // reused to avoid allocs
 
     // tracks live powerup pickups so we skip FindGameObjectsWithTag each wave
     public static int activePowerupCount;
@@ -63,6 +60,26 @@ public class SpawnManagerX : MonoBehaviour
         // remember where the player started
         playerStartPos = player.transform.position;
         playerRb = player.GetComponent<Rigidbody>();
+        timeSinceLastPowerup = 0f;
+    }
+
+    void OnEnable()
+    {
+        GameManagerX.OnEnemyScored += OnEnemyScored;
+    }
+
+    void OnDisable()
+    {
+        GameManagerX.OnEnemyScored -= OnEnemyScored;
+    }
+
+    // chance to spawn a powerup when the player scores an enemy
+    void OnEnemyScored()
+    {
+        if (Random.value < scorePowerupChance)
+        {
+            TrySpawnPowerup();
+        }
     }
 
     void Update()
@@ -79,6 +96,13 @@ public class SpawnManagerX : MonoBehaviour
         if (enemyCount == 0 && !isCountingDown)
         {
             StartCoroutine(WaveCountdown());
+        }
+
+        // drought timer — auto-spawn a powerup if none exist for too long
+        timeSinceLastPowerup += Time.deltaTime;
+        if (timeSinceLastPowerup >= powerupDroughtTime && activePowerupCount <= 0)
+        {
+            TrySpawnPowerup();
         }
     }
 
@@ -107,7 +131,7 @@ public class SpawnManagerX : MonoBehaviour
         isCountingDown = false;
     }
 
-    // random position relative to the spawn manager's position
+    // random position relative to the spawn manager's position (for enemies)
     Vector3 GenerateSpawnPosition()
     {
         float xPos = Random.Range(-spawnRangeX, spawnRangeX);
@@ -115,26 +139,31 @@ public class SpawnManagerX : MonoBehaviour
         return transform.position + new Vector3(xPos, 0, zPos);
     }
 
-    // pick a random enemy prefab based on wave-scaled weights
+    // pick a random designer-placed spawn point for powerups
+    Vector3 GetRandomPowerupSpawnPoint()
+    {
+        if (powerupSpawnPoints == null || powerupSpawnPoints.Length == 0)
+        {
+            // fallback if no points set — spawn at this object's position
+            Debug.LogWarning("SpawnManagerX: no powerup spawn points assigned!");
+            return transform.position;
+        }
+        return powerupSpawnPoints[Random.Range(0, powerupSpawnPoints.Length)].position;
+    }
+
+    // pick a random enemy prefab using slider weights
     GameObject PickRandomEnemyPrefab()
     {
-        // resolve normal prefab (backward compat with old enemyPrefab field)
         GameObject normalPrefab = normalEnemyPrefab != null ? normalEnemyPrefab : enemyPrefab;
 
-        // compute weights for current wave
-        float wNormal = normalPrefab != null ? Mathf.Max(0f, baseWeights.normal + waveCount * weightScalePerWave.normal) : 0f;
-        float wAggressive = (aggressiveEnemyPrefab != null && waveCount >= aggressiveStartWave)
-            ? Mathf.Max(0f, baseWeights.aggressive + (waveCount - aggressiveStartWave) * weightScalePerWave.aggressive)
-            : 0f;
-        float wEvasive = (evasiveEnemyPrefab != null && waveCount >= evasiveStartWave)
-            ? Mathf.Max(0f, baseWeights.evasive + (waveCount - evasiveStartWave) * weightScalePerWave.evasive)
-            : 0f;
-        float wTank = (tankEnemyPrefab != null && waveCount >= tankStartWave)
-            ? Mathf.Max(0f, baseWeights.tank + (waveCount - tankStartWave) * weightScalePerWave.tank)
-            : 0f;
+        // only count types that have a prefab assigned
+        float wNormal = normalPrefab != null ? normalChance : 0f;
+        float wAggressive = aggressiveEnemyPrefab != null ? aggressiveChance : 0f;
+        float wEvasive = evasiveEnemyPrefab != null ? evasiveChance : 0f;
+        float wTank = tankEnemyPrefab != null ? tankChance : 0f;
 
         float total = wNormal + wAggressive + wEvasive + wTank;
-        if (total <= 0f) return normalPrefab; // safety fallback
+        if (total <= 0f) return normalPrefab;
 
         float roll = Random.Range(0f, total);
 
@@ -146,37 +175,37 @@ public class SpawnManagerX : MonoBehaviour
         return tankEnemyPrefab;
     }
 
+    // pick a random powerup from all assigned prefabs
+    GameObject PickRandomPowerupPrefab()
+    {
+        powerupPrefabPool.Clear();
+        if (knockbackPowerupPrefab != null) powerupPrefabPool.Add(knockbackPowerupPrefab);
+        if (smashPowerupPrefab != null) powerupPrefabPool.Add(smashPowerupPrefab);
+        if (shieldPowerupPrefab != null) powerupPrefabPool.Add(shieldPowerupPrefab);
+        if (giantPowerupPrefab != null) powerupPrefabPool.Add(giantPowerupPrefab);
+        if (hauntPowerupPrefab != null) powerupPrefabPool.Add(hauntPowerupPrefab);
+
+        if (powerupPrefabPool.Count == 0) return null;
+        return powerupPrefabPool[Random.Range(0, powerupPrefabPool.Count)];
+    }
+
+    // spawn a random powerup if under the cap
+    void TrySpawnPowerup()
+    {
+        if (activePowerupCount >= maxActivePowerups) return;
+
+        GameObject prefab = PickRandomPowerupPrefab();
+        if (prefab == null) return;
+
+        Vector3 pos = GetRandomPowerupSpawnPoint();
+        GameObject spawned = Instantiate(prefab, pos, prefab.transform.rotation);
+        spawned.AddComponent<PowerupTracker>();
+
+        timeSinceLastPowerup = 0f;
+    }
+
     void SpawnEnemyWave(int enemiesToSpawn)
     {
-        // spawn a powerup if none exist (static counter replaces 5x FindGameObjectsWithTag)
-        if (activePowerupCount <= 0)
-        {
-            GameObject prefab = null;
-            if (powerupCycle == 0 && knockbackPowerupPrefab != null)
-                prefab = knockbackPowerupPrefab;
-            else if (powerupCycle == 1 && smashPowerupPrefab != null)
-                prefab = smashPowerupPrefab;
-            else if (powerupCycle == 2 && shieldPowerupPrefab != null)
-                prefab = shieldPowerupPrefab;
-            else if (powerupCycle == 3 && giantPowerupPrefab != null)
-                prefab = giantPowerupPrefab;
-            else if (powerupCycle == 4 && hauntPowerupPrefab != null)
-                prefab = hauntPowerupPrefab;
-
-            // fallback to knockback if the selected prefab isn't assigned
-            if (prefab == null && knockbackPowerupPrefab != null)
-                prefab = knockbackPowerupPrefab;
-
-            if (prefab != null)
-            {
-                GameObject spawned = Instantiate(prefab, GenerateSpawnPosition() + prefab.transform.position, prefab.transform.rotation);
-                // attach tracker so activePowerupCount stays in sync when picked up or destroyed
-                spawned.AddComponent<PowerupTracker>();
-            }
-
-            powerupCycle = (powerupCycle + 1) % 5;
-        }
-
         // spawn enemies — each one picks a weighted random type based on current wave
         for (int i = 0; i < enemiesToSpawn; i++)
         {

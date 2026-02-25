@@ -26,6 +26,9 @@ public class GameManagerX : MonoBehaviour
     public TextMeshProUGUI finalScoreText;
     public TextMeshProUGUI finalWaveText;
 
+    // fired when an enemy is scored (knocked into enemy goal, shield kill, etc.)
+    public static event System.Action OnEnemyScored;
+
     [HideInInspector] public bool isGameOver;
     [HideInInspector] public bool isPaused;
 
@@ -75,6 +78,7 @@ public class GameManagerX : MonoBehaviour
     public void EnemyScored()
     {
         score++;
+        OnEnemyScored?.Invoke();
         UpdateHUD();
     }
 
