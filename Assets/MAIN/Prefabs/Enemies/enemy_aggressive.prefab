@@ -153,11 +153,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0abf9b32560853249adc1cdbb13c7e7f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::AggressiveEnemyX
-  speed: 10
+  speed: 5
   playerGoal: {fileID: 0}
   stunSpeed: 3
-  stunDuration: 1.5
+  stunDuration: 2
   aggroDetectRadius: 15
-  aggroRamForce: 20
-  aggroRamCooldown: 2
-  aggroAcceleration: 100
+  aggroHomingForce: 80
+  aggroHomingSpeed: 25
+  aggroHitKnockback: 25
+  aggroAcceleration: 2
+  aggroCooldown: 3

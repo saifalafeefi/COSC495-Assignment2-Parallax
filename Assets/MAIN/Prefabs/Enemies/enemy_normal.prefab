@@ -153,7 +153,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: da2a5bfc8f62c41e8ad989c97bd3886e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::EnemyX
-  speed: 100
+  speed: 5
   playerGoal: {fileID: 0}
-  stunSpeed: 250
+  stunSpeed: 3
   stunDuration: 2

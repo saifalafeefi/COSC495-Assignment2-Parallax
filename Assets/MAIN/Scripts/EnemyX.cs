@@ -129,8 +129,23 @@ public class EnemyX : MonoBehaviour
     // override in subclasses for type-specific movement
     protected virtual void Move()
     {
-        Vector3 goalDirection = (playerGoal.transform.position - transform.position).normalized;
-        enemyRb.AddForce(goalDirection * speed * Time.deltaTime);
+        Vector3 toGoal = playerGoal.transform.position - transform.position;
+        toGoal.y = 0f;
+        Vector3 goalDirection = toGoal.normalized;
+        enemyRb.AddForce(goalDirection * speed, ForceMode.Force);
+        ClampSpeed();
+    }
+
+    // cap velocity magnitude without changing direction
+    protected void ClampSpeed()
+    {
+        Vector3 vel = enemyRb.linearVelocity;
+        float yVel = vel.y; // preserve vertical (gravity/bounces)
+        vel.y = 0f;
+        if (vel.magnitude > speed)
+            vel = vel.normalized * speed;
+        vel.y = yVel;
+        enemyRb.linearVelocity = vel;
     }
 
     // trigger-based goal scoring (goals use isTrigger colliders)
@@ -150,7 +165,7 @@ public class EnemyX : MonoBehaviour
         }
     }
 
-    private void OnCollisionEnter(Collision other)
+    protected virtual void OnCollisionEnter(Collision other)
     {
         if (other.gameObject.CompareTag("Player"))
         {

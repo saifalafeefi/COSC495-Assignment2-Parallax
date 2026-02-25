@@ -153,10 +153,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 6f10c7cd263055346aee455d7f3ea050, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::EvasiveEnemyX
-  speed: 10
+  speed: 2.5
   playerGoal: {fileID: 0}
-  stunSpeed: 3
-  stunDuration: 1.5
+  stunSpeed: 4
+  stunDuration: 3
   dodgeInterval: 3
-  dodgeForce: 30
-  crawlSpeedMultiplier: 0.4
+  dodgeDuration: 1.5
+  dodgeStrength: 100
+  dodgeAngle: 2
