@@ -133,27 +133,26 @@ public class EnemyX : MonoBehaviour
         enemyRb.AddForce(goalDirection * speed * Time.deltaTime);
     }
 
-    private void OnCollisionEnter(Collision other)
+    // trigger-based goal scoring (goals use isTrigger colliders)
+    private void OnTriggerEnter(Collider other)
     {
         if (other.gameObject.name == "Enemy Goal")
         {
-            // player scored — notify game manager
             if (GameManagerX.Instance != null)
-            {
                 GameManagerX.Instance.EnemyScored();
-            }
             Destroy(gameObject);
         }
         else if (other.gameObject.name == "Player Goal")
         {
-            // enemy got through — player loses a life
             if (GameManagerX.Instance != null)
-            {
                 GameManagerX.Instance.EnemyReachedPlayerGoal();
-            }
             Destroy(gameObject);
         }
-        else if (other.gameObject.CompareTag("Player"))
+    }
+
+    private void OnCollisionEnter(Collision other)
+    {
+        if (other.gameObject.CompareTag("Player"))
         {
             Stun();
         }
