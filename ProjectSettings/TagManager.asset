@@ -17,8 +17,8 @@ TagManager:
   - MenuTarget
   - Water
   - UI
-  - 
-  - 
+  - CameraLayer
+  - BorderLayer
   - 
   - 
   - 

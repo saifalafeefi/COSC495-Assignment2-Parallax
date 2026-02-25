@@ -10,7 +10,8 @@ GameObject:
   m_Component:
   - component: {fileID: 9066527548595665485}
   - component: {fileID: 2658588514763355240}
-  m_Layer: 0
+  - component: {fileID: 7873198740142113732}
+  m_Layer: 7
   m_Name: Border_East (1)
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -53,6 +54,24 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 117, y: 50, z: 1}
   m_Center: {x: 0, y: 0, z: 0}
+--- !u!114 &7873198740142113732
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1809508577346289767}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2d45712158fe74e438d3cfc6b4bfc5dc, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::BorderWithTrigger
+  playerTag: Player
+  triggerOffset: 0.2
+  triggerThickness: 0.1
+  raiseAmount: 8
+  oneShot: 1
+  additive: 1
 --- !u!1 &2095484553055652195
 GameObject:
   m_ObjectHideFlags: 0
@@ -62,6 +81,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1240122640651291185}
+  - component: {fileID: 5975229037459077107}
   m_Layer: 0
   m_Name: BORDERS
   m_TagString: Untagged
@@ -94,6 +114,27 @@ Transform:
   - {fileID: 8971835408077936305}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!65 &5975229037459077107
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2095484553055652195}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 1
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Size: {x: 1, y: 1, z: 1}
+  m_Center: {x: 0, y: 0, z: 0}
 --- !u!1 &2149747281929572924
 GameObject:
   m_ObjectHideFlags: 0
@@ -104,7 +145,8 @@ GameObject:
   m_Component:
   - component: {fileID: 4721529690828320475}
   - component: {fileID: 4960130215464063346}
-  m_Layer: 0
+  - component: {fileID: 8679865821469511552}
+  m_Layer: 7
   m_Name: Border_East (2)
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -147,6 +189,24 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 117, y: 50, z: 1}
   m_Center: {x: 0, y: 0, z: 0}
+--- !u!114 &8679865821469511552
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2149747281929572924}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2d45712158fe74e438d3cfc6b4bfc5dc, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::BorderWithTrigger
+  playerTag: Player
+  triggerOffset: 0.2
+  triggerThickness: 0.1
+  raiseAmount: 8
+  oneShot: 1
+  additive: 1
 --- !u!1 &4651217847647531262
 GameObject:
   m_ObjectHideFlags: 0
@@ -157,7 +217,8 @@ GameObject:
   m_Component:
   - component: {fileID: 8237894291629070344}
   - component: {fileID: 7414133164110855670}
-  m_Layer: 0
+  - component: {fileID: 1065822250259696334}
+  m_Layer: 7
   m_Name: Border_East
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -200,6 +261,24 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 117, y: 50, z: 1}
   m_Center: {x: 0, y: 0, z: 0}
+--- !u!114 &1065822250259696334
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4651217847647531262}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2d45712158fe74e438d3cfc6b4bfc5dc, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::BorderWithTrigger
+  playerTag: Player
+  triggerOffset: 0.2
+  triggerThickness: 0.1
+  raiseAmount: 8
+  oneShot: 1
+  additive: 1
 --- !u!1 &5617518418477880715
 GameObject:
   m_ObjectHideFlags: 0
@@ -210,7 +289,8 @@ GameObject:
   m_Component:
   - component: {fileID: 8971835408077936305}
   - component: {fileID: 4011518917632145024}
-  m_Layer: 0
+  - component: {fileID: 5261964015426878726}
+  m_Layer: 7
   m_Name: Border_Top
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -253,6 +333,24 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 117, y: 50, z: 1}
   m_Center: {x: 0, y: 0, z: 0}
+--- !u!114 &5261964015426878726
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5617518418477880715}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2d45712158fe74e438d3cfc6b4bfc5dc, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::BorderWithTrigger
+  playerTag: Player
+  triggerOffset: 0.2
+  triggerThickness: 0.1
+  raiseAmount: 8
+  oneShot: 1
+  additive: 1
 --- !u!1 &6447782586379708326
 GameObject:
   m_ObjectHideFlags: 0
@@ -263,7 +361,8 @@ GameObject:
   m_Component:
   - component: {fileID: 9145378022433869949}
   - component: {fileID: 7759226027360974258}
-  m_Layer: 0
+  - component: {fileID: 1398433284061970198}
+  m_Layer: 7
   m_Name: Border_North
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -306,6 +405,24 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 117, y: 50, z: 1}
   m_Center: {x: 0, y: 0, z: 0}
+--- !u!114 &1398433284061970198
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6447782586379708326}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2d45712158fe74e438d3cfc6b4bfc5dc, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::BorderWithTrigger
+  playerTag: Player
+  triggerOffset: 0.2
+  triggerThickness: 0.1
+  raiseAmount: 8
+  oneShot: 1
+  additive: 1
 --- !u!1 &6481044141518139261
 GameObject:
   m_ObjectHideFlags: 0
@@ -316,7 +433,8 @@ GameObject:
   m_Component:
   - component: {fileID: 8834487730221685743}
   - component: {fileID: 5157062607537661398}
-  m_Layer: 0
+  - component: {fileID: 8062572314838450750}
+  m_Layer: 7
   m_Name: Border_West
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -359,6 +477,24 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 117, y: 50, z: 1}
   m_Center: {x: 0, y: 0, z: 0}
+--- !u!114 &8062572314838450750
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6481044141518139261}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2d45712158fe74e438d3cfc6b4bfc5dc, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::BorderWithTrigger
+  playerTag: Player
+  triggerOffset: 0.2
+  triggerThickness: 0.1
+  raiseAmount: 8
+  oneShot: 1
+  additive: 1
 --- !u!1 &6660099397149310653
 GameObject:
   m_ObjectHideFlags: 0
@@ -369,7 +505,8 @@ GameObject:
   m_Component:
   - component: {fileID: 306204900153654031}
   - component: {fileID: 5302676657011273354}
-  m_Layer: 0
+  - component: {fileID: 6366198769999817759}
+  m_Layer: 7
   m_Name: Border_East (4)
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -412,6 +549,24 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 117, y: 50, z: 1}
   m_Center: {x: 0, y: 0, z: 0}
+--- !u!114 &6366198769999817759
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6660099397149310653}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2d45712158fe74e438d3cfc6b4bfc5dc, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::BorderWithTrigger
+  playerTag: Player
+  triggerOffset: 0.2
+  triggerThickness: 0.1
+  raiseAmount: 8
+  oneShot: 1
+  additive: 1
 --- !u!1 &7306301835924116326
 GameObject:
   m_ObjectHideFlags: 0
@@ -422,7 +577,8 @@ GameObject:
   m_Component:
   - component: {fileID: 8319394128328427977}
   - component: {fileID: 8773899258084854558}
-  m_Layer: 0
+  - component: {fileID: 152562301340510549}
+  m_Layer: 7
   m_Name: Border_Bottom
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -465,6 +621,24 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 117, y: 50, z: 1}
   m_Center: {x: 0, y: 0, z: 0}
+--- !u!114 &152562301340510549
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7306301835924116326}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2d45712158fe74e438d3cfc6b4bfc5dc, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::BorderWithTrigger
+  playerTag: Player
+  triggerOffset: 0.2
+  triggerThickness: 0.1
+  raiseAmount: 8
+  oneShot: 1
+  additive: 1
 --- !u!1 &8013855295931168388
 GameObject:
   m_ObjectHideFlags: 0
@@ -475,7 +649,8 @@ GameObject:
   m_Component:
   - component: {fileID: 8650949311418730386}
   - component: {fileID: 4440501141555723619}
-  m_Layer: 0
+  - component: {fileID: 239650829150421897}
+  m_Layer: 7
   m_Name: Border_South
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -518,6 +693,24 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 117, y: 50, z: 1}
   m_Center: {x: 0, y: 0, z: 0}
+--- !u!114 &239650829150421897
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8013855295931168388}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2d45712158fe74e438d3cfc6b4bfc5dc, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::BorderWithTrigger
+  playerTag: Player
+  triggerOffset: 0.2
+  triggerThickness: 0.1
+  raiseAmount: 8
+  oneShot: 1
+  additive: 1
 --- !u!1 &8207868621205515620
 GameObject:
   m_ObjectHideFlags: 0
@@ -528,7 +721,8 @@ GameObject:
   m_Component:
   - component: {fileID: 1679427471699162262}
   - component: {fileID: 349441288578438770}
-  m_Layer: 0
+  - component: {fileID: 8709091495241150229}
+  m_Layer: 7
   m_Name: Border_East (3)
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -571,3 +765,21 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 117, y: 50, z: 1}
   m_Center: {x: 0, y: 0, z: 0}
+--- !u!114 &8709091495241150229
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8207868621205515620}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2d45712158fe74e438d3cfc6b4bfc5dc, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::BorderWithTrigger
+  playerTag: Player
+  triggerOffset: 0.2
+  triggerThickness: 0.1
+  raiseAmount: 8
+  oneShot: 1
+  additive: 1
