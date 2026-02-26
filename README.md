@@ -1,6 +1,14 @@
-# Ball Brawl
+# Supersonic Acrobatic Rocket-Powered Battle-Cars (SARPBC for short)
 
-A 3D soccer/sumo ball game where you knock enemy balls into their goal while defending your own.
+DO YOU HAVE WHAT IT TAKES TO PROTECT YOUR NET AGAINST ALL ODDS?
+
+ARE YOU PASSIONATE ABOUT KNOCKING OPPONENTS FOR THE THRILL?
+
+DO YOU LIKE HIGH SPEED AND DESTRUCTION?
+
+THEN THIS GAME IS FOR YOU!
+
+(A 3D soccer/sumo ball game where you knock enemy balls into their goal while defending your own)
 
 ## Gameplay
 
@@ -51,12 +59,13 @@ Waves start with normal enemies, then introduce new types as difficulty scales:
 - Weighted enemy type distribution that scales with wave number
 - Powerup stacking with visual indicator clones
 - 5-phase targeted smash aiming system with slow-mo
-- Anime speed lines that intensify at high speed
+- Speed lines that intensify at high speed
 - Powerup color overlay shader with animated noise blending
 - Pixelation post-processing with adjustable pixel size
 - Skin selection with persistence across sessions
 - Main menu with physics-based smash navigation
 - Pause and game over screens with score/wave tracking
+- 4 EPIC BIOMES TO CHOOSE FROM!!11!1111
 
 ## Credits
 
