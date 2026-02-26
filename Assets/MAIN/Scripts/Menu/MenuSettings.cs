@@ -15,6 +15,10 @@ public class MenuSettings : MonoBehaviour
     [Header("Speed Lines")]
     [SerializeField] Toggle speedLinesToggle;
 
+    [Header("Music Volume")]
+    [SerializeField] Slider musicVolumeSlider;
+    [SerializeField] TextMeshProUGUI musicVolumeLabel;
+
     [Header("Bloom")]
     [SerializeField] Toggle bloomToggle;
 
@@ -38,6 +42,16 @@ public class MenuSettings : MonoBehaviour
             UpdatePixelLabel(pixelSizeSlider.value);
         }
 
+        if (musicVolumeSlider != null)
+        {
+            musicVolumeSlider.wholeNumbers = false;
+            musicVolumeSlider.minValue = 0f;
+            musicVolumeSlider.maxValue = 1f;
+            musicVolumeSlider.value = MusicManager.SharedVolume;
+            musicVolumeSlider.onValueChanged.AddListener(OnMusicVolumeChanged);
+            UpdateMusicVolumeLabel(musicVolumeSlider.value);
+        }
+
         if (speedLinesToggle != null)
         {
             speedLinesToggle.isOn = SpeedLinesEffect.SharedEnabled;
@@ -57,6 +71,9 @@ public class MenuSettings : MonoBehaviour
     {
         if (pixelSizeSlider != null)
             pixelSizeSlider.onValueChanged.RemoveListener(OnPixelSizeChanged);
+
+        if (musicVolumeSlider != null)
+            musicVolumeSlider.onValueChanged.RemoveListener(OnMusicVolumeChanged);
 
         if (speedLinesToggle != null)
             speedLinesToggle.onValueChanged.RemoveListener(OnSpeedLinesToggled);
@@ -81,6 +98,25 @@ public class MenuSettings : MonoBehaviour
             live.pixelSize = size;
 
         UpdatePixelLabel(value);
+    }
+
+    void OnMusicVolumeChanged(float value)
+    {
+        MusicManager.SharedVolume = value;
+        MusicManager.Save();
+
+        // update the live instance if it exists
+        var live = FindAnyObjectByType<MusicManager>();
+        if (live != null)
+            live.SetVolume(value);
+
+        UpdateMusicVolumeLabel(value);
+    }
+
+    void UpdateMusicVolumeLabel(float value)
+    {
+        if (musicVolumeLabel != null)
+            musicVolumeLabel.text = $"Music: {Mathf.RoundToInt(value * 100)}%";
     }
 
     void OnSpeedLinesToggled(bool enabled)

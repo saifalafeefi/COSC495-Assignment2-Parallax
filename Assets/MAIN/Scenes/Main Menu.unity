@@ -1761,6 +1761,8 @@ MonoBehaviour:
   pixelSizeSlider: {fileID: 0}
   pixelSizeLabel: {fileID: 0}
   speedLinesToggle: {fileID: 0}
+  musicVolumeSlider: {fileID: 0}
+  musicVolumeLabel: {fileID: 0}
   bloomToggle: {fileID: 0}
   skinPreview: {fileID: 0}
   skinDropdown: {fileID: 0}
@@ -2441,6 +2443,8 @@ MonoBehaviour:
   pixelSizeSlider: {fileID: 0}
   pixelSizeLabel: {fileID: 0}
   speedLinesToggle: {fileID: 0}
+  musicVolumeSlider: {fileID: 724659304}
+  musicVolumeLabel: {fileID: 1526928992}
   bloomToggle: {fileID: 0}
   skinPreview: {fileID: 0}
   skinDropdown: {fileID: 0}
@@ -3153,6 +3157,8 @@ MonoBehaviour:
   pixelSizeSlider: {fileID: 0}
   pixelSizeLabel: {fileID: 0}
   speedLinesToggle: {fileID: 0}
+  musicVolumeSlider: {fileID: 0}
+  musicVolumeLabel: {fileID: 0}
   bloomToggle: {fileID: 0}
   skinPreview: {fileID: 0}
   skinDropdown: {fileID: 0}
@@ -3257,6 +3263,52 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1078999901}
   m_CullTransparentMesh: 1
+--- !u!1 &1099366078
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1099366079}
+  - component: {fileID: 1099366080}
+  m_Layer: 0
+  m_Name: MusicManager
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1099366079
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1099366078}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: -30.90716, y: 0, z: 28.70218}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1099366080
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1099366078}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bef12b62c6ba84f4db151f32ec9d0a8e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::MusicManager
+  musicClip: {fileID: 8300000, guid: 73907c7e40f091543a8b7e9ea3a02ffa, type: 3}
+  volume: 0.5
 --- !u!4 &1105599879 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 2725327970544891917, guid: 4fce5015e4d7cc943a5a323698a78229, type: 3}
@@ -3891,6 +3943,8 @@ MonoBehaviour:
   pixelSizeSlider: {fileID: 0}
   pixelSizeLabel: {fileID: 0}
   speedLinesToggle: {fileID: 0}
+  musicVolumeSlider: {fileID: 0}
+  musicVolumeLabel: {fileID: 0}
   bloomToggle: {fileID: 0}
   skinPreview: {fileID: 0}
   skinDropdown: {fileID: 0}
@@ -4002,6 +4056,8 @@ MonoBehaviour:
   pixelSizeSlider: {fileID: 0}
   pixelSizeLabel: {fileID: 0}
   speedLinesToggle: {fileID: 1290510308}
+  musicVolumeSlider: {fileID: 0}
+  musicVolumeLabel: {fileID: 0}
   bloomToggle: {fileID: 0}
   skinPreview: {fileID: 0}
   skinDropdown: {fileID: 0}
@@ -5144,6 +5200,8 @@ MonoBehaviour:
   pixelSizeSlider: {fileID: 0}
   pixelSizeLabel: {fileID: 0}
   speedLinesToggle: {fileID: 0}
+  musicVolumeSlider: {fileID: 0}
+  musicVolumeLabel: {fileID: 0}
   bloomToggle: {fileID: 0}
   skinPreview: {fileID: 0}
   skinDropdown: {fileID: 0}
@@ -5392,7 +5450,7 @@ MonoBehaviour:
       m_Calls:
       - m_Target: {fileID: 264828500}
         m_TargetAssemblyTypeName: MainMenuSmashController, Assembly-CSharp
-        m_MethodName: OnSettingsBack
+        m_MethodName: OnBiomeSelectionBack
         m_Mode: 1
         m_Arguments:
           m_ObjectArgument: {fileID: 0}
@@ -5678,6 +5736,8 @@ MonoBehaviour:
   pixelSizeSlider: {fileID: 0}
   pixelSizeLabel: {fileID: 0}
   speedLinesToggle: {fileID: 0}
+  musicVolumeSlider: {fileID: 0}
+  musicVolumeLabel: {fileID: 0}
   bloomToggle: {fileID: 1586354635}
   skinPreview: {fileID: 0}
   skinDropdown: {fileID: 0}
@@ -6678,6 +6738,8 @@ MonoBehaviour:
   pixelSizeSlider: {fileID: 558541943}
   pixelSizeLabel: {fileID: 1209661906}
   speedLinesToggle: {fileID: 0}
+  musicVolumeSlider: {fileID: 0}
+  musicVolumeLabel: {fileID: 0}
   bloomToggle: {fileID: 0}
   skinPreview: {fileID: 44410633}
   skinDropdown: {fileID: 0}
@@ -7508,6 +7570,8 @@ MonoBehaviour:
   pixelSizeSlider: {fileID: 0}
   pixelSizeLabel: {fileID: 0}
   speedLinesToggle: {fileID: 0}
+  musicVolumeSlider: {fileID: 0}
+  musicVolumeLabel: {fileID: 0}
   bloomToggle: {fileID: 0}
   skinPreview: {fileID: 0}
   skinDropdown: {fileID: 0}
@@ -7897,6 +7961,8 @@ MonoBehaviour:
   pixelSizeSlider: {fileID: 0}
   pixelSizeLabel: {fileID: 0}
   speedLinesToggle: {fileID: 0}
+  musicVolumeSlider: {fileID: 0}
+  musicVolumeLabel: {fileID: 0}
   bloomToggle: {fileID: 0}
   skinPreview: {fileID: 44410633}
   skinDropdown: {fileID: 0}
@@ -8533,16 +8599,17 @@ SceneRoots:
   m_Roots:
   - {fileID: 237376425}
   - {fileID: 1461615605}
+  - {fileID: 1099366079}
+  - {fileID: 264828501}
+  - {fileID: 1133233015}
   - {fileID: 2074188300}
   - {fileID: 1733134102}
   - {fileID: 1454394977}
   - {fileID: 1565213718}
   - {fileID: 1152263933}
   - {fileID: 44410630}
-  - {fileID: 264828501}
   - {fileID: 1667687362}
   - {fileID: 704859161}
   - {fileID: 4443290435955447441}
   - {fileID: 1304224868}
-  - {fileID: 1133233015}
   - {fileID: 816727585}

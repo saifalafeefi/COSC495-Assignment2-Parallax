@@ -131,7 +131,7 @@ MonoBehaviour:
   smashRadius: 15
   maxSmashForce: 50
   minSmashForce: 10
-  indicatorPrefab: {fileID: 7862467771832844023, guid: 6ff5fe4b23db10b46aa38bf15cca57c1, type: 3}
+  indicatorPrefab: {fileID: 1230671616877785706, guid: dbd389710b1951e4da5ef1cac2c6a147, type: 3}
   stackMultiplier: {x: 1, y: 1, z: 1}
 --- !u!114 &-8142645192446859753
 MonoBehaviour:

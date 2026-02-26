@@ -241,8 +241,8 @@ MonoBehaviour:
   hauntDuration: 8
   hauntSpeed: 15
   hauntEffectDuration: 3
-  indicatorPrefab: {fileID: 1230671616877785706, guid: f4e6816ec08676d4f8be076ea031fabb, type: 3}
-  hauntEnemyVfxPrefab: {fileID: 1230671616877785706, guid: f4e6816ec08676d4f8be076ea031fabb, type: 3}
+  indicatorPrefab: {fileID: 1230671616877785706, guid: 5d24a5a34899ee845be3938af16de767, type: 3}
+  hauntEnemyVfxPrefab: {fileID: 1230671616877785706, guid: 5d24a5a34899ee845be3938af16de767, type: 3}
   stackMultiplier: {x: 1, y: 1, z: 1}
 --- !u!114 &5732758783822036817
 MonoBehaviour:
