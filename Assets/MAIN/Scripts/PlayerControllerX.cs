@@ -110,6 +110,7 @@ public class PlayerControllerX : MonoBehaviour
     public float slowMotionScale = 0.15f;
     public float diveSpeed = 40f;
     public float diveAcceleration = 60f; // how much faster the dive gets per second
+    public float maxDiveSpeed = 200f; // cap on time-compensated dive velocity to prevent tunneling
     public float launchDuration = 0.5f;
     public Vector3 smashCameraOffset = new Vector3(1f, 2f, -2f);
     private RotateCameraX cameraRotator;
@@ -515,6 +516,7 @@ public class PlayerControllerX : MonoBehaviour
             EnsureIndicatorInstance(pickup.indicatorPrefab, ref smashPowerupIndicator, ref smashIndicatorBaseScale);
         }
 
+
         smashPowerupStacks++;
         if (smashPowerupStacks == 1)
         {
@@ -866,9 +868,12 @@ public class PlayerControllerX : MonoBehaviour
         if (cinemachineBrain != null) cinemachineBrain.IgnoreTimeScale = true;
 
         // dive until we hit something (ground, wall, enemy, anything)
+        // switch to continuous so the ball can't tunnel through geometry at high speed
+        playerRb.collisionDetectionMode = CollisionDetectionMode.ContinuousDynamic;
         isDiving = true;
         diveCollided = false;
         float currentDiveSpeed = diveSpeed;
+        // maxDiveSpeed configured in Inspector
         while (!diveCollided)
         {
             if (transform.position.y < -5f)
@@ -879,7 +884,8 @@ public class PlayerControllerX : MonoBehaviour
             Vector3 diveDirection = (landingTarget - transform.position).normalized;
             // compensate for slow-mo so the player dives at full real-time speed
             float timeCompensation = Time.timeScale > 0 ? 1f / Time.timeScale : 1f;
-            playerRb.linearVelocity = diveDirection * currentDiveSpeed * timeCompensation;
+            float compensatedSpeed = Mathf.Min(currentDiveSpeed * timeCompensation, maxDiveSpeed);
+            playerRb.linearVelocity = diveDirection * compensatedSpeed;
             yield return new WaitForFixedUpdate();
         }
         isDiving = false;
@@ -887,6 +893,8 @@ public class PlayerControllerX : MonoBehaviour
         // --- Phase 5: Impact — kill momentum, restore time, then smash ---
         playerRb.linearVelocity = Vector3.zero;
         playerRb.angularVelocity = Vector3.zero;
+        // restore discrete now that dive is over
+        playerRb.collisionDetectionMode = CollisionDetectionMode.Discrete;
         if (cinemachineBrain != null) cinemachineBrain.IgnoreTimeScale = false;
         Time.timeScale = 1f;
         Time.fixedDeltaTime = originalFixedDeltaTime;
