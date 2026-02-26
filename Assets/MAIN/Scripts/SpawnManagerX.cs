@@ -26,6 +26,13 @@ public class SpawnManagerX : MonoBehaviour
     [SerializeField] private GameObject giantPowerupPrefab;
     [SerializeField] private GameObject hauntPowerupPrefab;
 
+    [Header("Powerup Spawn Chances")]
+    [SerializeField, Range(0f, 1f)] private float knockbackChance = 0.2f;
+    [SerializeField, Range(0f, 1f)] private float smashChance = 0.2f;
+    [SerializeField, Range(0f, 1f)] private float shieldChance = 0.2f;
+    [SerializeField, Range(0f, 1f)] private float giantChance = 0.2f;
+    [SerializeField, Range(0f, 1f)] private float hauntChance = 0.2f;
+
     // spawn area tuning — exposed so designers can tweak in Inspector
     [Header("Spawn Area")]
     [SerializeField] private float spawnRangeX = 10;
@@ -45,7 +52,6 @@ public class SpawnManagerX : MonoBehaviour
     private int enemyCount;
     private bool isCountingDown;
     private float timeSinceLastPowerup;
-    private List<GameObject> powerupPrefabPool = new List<GameObject>(); // reused to avoid allocs
 
     // tracks live powerup pickups so we skip FindGameObjectsWithTag each wave
     public static int activePowerupCount;
@@ -175,18 +181,28 @@ public class SpawnManagerX : MonoBehaviour
         return tankEnemyPrefab;
     }
 
-    // pick a random powerup from all assigned prefabs
+    // weighted random pick from all assigned powerup prefabs (same pattern as enemy spawning)
     GameObject PickRandomPowerupPrefab()
     {
-        powerupPrefabPool.Clear();
-        if (knockbackPowerupPrefab != null) powerupPrefabPool.Add(knockbackPowerupPrefab);
-        if (smashPowerupPrefab != null) powerupPrefabPool.Add(smashPowerupPrefab);
-        if (shieldPowerupPrefab != null) powerupPrefabPool.Add(shieldPowerupPrefab);
-        if (giantPowerupPrefab != null) powerupPrefabPool.Add(giantPowerupPrefab);
-        if (hauntPowerupPrefab != null) powerupPrefabPool.Add(hauntPowerupPrefab);
+        float wKnockback = knockbackPowerupPrefab != null ? knockbackChance : 0f;
+        float wSmash = smashPowerupPrefab != null ? smashChance : 0f;
+        float wShield = shieldPowerupPrefab != null ? shieldChance : 0f;
+        float wGiant = giantPowerupPrefab != null ? giantChance : 0f;
+        float wHaunt = hauntPowerupPrefab != null ? hauntChance : 0f;
 
-        if (powerupPrefabPool.Count == 0) return null;
-        return powerupPrefabPool[Random.Range(0, powerupPrefabPool.Count)];
+        float total = wKnockback + wSmash + wShield + wGiant + wHaunt;
+        if (total <= 0f) return null;
+
+        float roll = Random.Range(0f, total);
+
+        if (roll < wKnockback) return knockbackPowerupPrefab;
+        roll -= wKnockback;
+        if (roll < wSmash) return smashPowerupPrefab;
+        roll -= wSmash;
+        if (roll < wShield) return shieldPowerupPrefab;
+        roll -= wShield;
+        if (roll < wGiant) return giantPowerupPrefab;
+        return hauntPowerupPrefab;
     }
 
     // spawn a random powerup if under the cap
@@ -229,9 +245,16 @@ public class SpawnManagerX : MonoBehaviour
     // reset player to where it was at game start
     void ResetPlayerPosition()
     {
-        player.transform.position = playerStartPos;
+        // cancel any active smash/slow-mo so state doesn't carry over
+        var controller = player.GetComponent<PlayerControllerX>();
+        if (controller != null)
+            controller.ForceResetState();
+
+        // teleport via MovePosition so physics doesn't roll back the position
         playerRb.linearVelocity = Vector3.zero;
         playerRb.angularVelocity = Vector3.zero;
+        playerRb.MovePosition(playerStartPos);
+        player.transform.position = playerStartPos;
     }
 
     // reset statics between scenes

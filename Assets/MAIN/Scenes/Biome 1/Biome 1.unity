@@ -5391,6 +5391,10 @@ PrefabInstance:
       propertyPath: player
       value: 
       objectReference: {fileID: 583048338}
+    - target: {fileID: 2926900729539105417, guid: 1acfad45f85c4b043b7c921fe9ad1e2e, type: 3}
+      propertyPath: maxActivePowerups
+      value: 3
+      objectReference: {fileID: 0}
     - target: {fileID: 6517686440532539486, guid: 1acfad45f85c4b043b7c921fe9ad1e2e, type: 3}
       propertyPath: m_LocalPosition.x
       value: -3.7215009

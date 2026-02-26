@@ -129,6 +129,7 @@ public class PlayerControllerX : MonoBehaviour
     private LineRenderer aimLine;
     private Coroutine turboSmokeCoroutine;
     private ParticleSystem runtimeTurboSmokeFx;
+    private Coroutine smashCoroutine;
     private static Shader cachedSpriteShader; // avoid Shader.Find every Start
 
     void Start()
@@ -209,7 +210,7 @@ public class PlayerControllerX : MonoBehaviour
         }
         else if (Input.GetKeyDown(KeyCode.F) && smashPowerupStacks > 0 && !isSmashing)
         {
-            StartCoroutine(PerformSmashAttack());
+            smashCoroutine = StartCoroutine(PerformSmashAttack());
         }
 
         // update landing indicator + aim line during aiming (follows camera direction)
@@ -923,6 +924,44 @@ public class PlayerControllerX : MonoBehaviour
         }
 
         isSmashing = false;
+    }
+
+    // cancel any active smash and restore all state to normal
+    // called by SpawnManagerX between waves so the player doesn't stay stuck mid-smash
+    public void ForceResetState()
+    {
+        // only stop the smash coroutine — leave powerup timers alone
+        if (smashCoroutine != null)
+        {
+            StopCoroutine(smashCoroutine);
+            smashCoroutine = null;
+        }
+
+        isSmashing = false;
+        isAiming = false;
+        isDiving = false;
+        diveCollided = false;
+        diveRequested = false;
+
+        playerRb.useGravity = true;
+        playerRb.collisionDetectionMode = CollisionDetectionMode.Discrete;
+
+        // restore time in case we were mid slow-mo
+        Time.timeScale = 1f;
+        Time.fixedDeltaTime = originalFixedDeltaTime;
+
+        if (cinemachineBrain != null) cinemachineBrain.IgnoreTimeScale = false;
+
+        if (cameraRotator != null)
+            cameraRotator.RestorePitchClamp();
+        if (shoulderShift != null)
+        {
+            shoulderShift.ReleaseCameraSide();
+            shoulderShift.ReleaseShoulderOffset();
+        }
+
+        if (landingIndicator != null) landingIndicator.SetActive(false);
+        if (aimLine != null) aimLine.enabled = false;
     }
 
     // find all enemies in range and push them away — closer = harder hit
