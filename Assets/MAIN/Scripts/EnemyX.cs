@@ -21,8 +21,11 @@ public class EnemyX : MonoBehaviour
     // after getting hit, enemy drifts toward its own goal briefly
     [SerializeField] private float stunSpeed = 3f;
     [SerializeField] private float stunDuration = 1.5f;
+    [SerializeField] private float postStunRecoverDuration = 0.55f; // blend time before full steering returns
+    [SerializeField] private float overspeedBrake = 16f; // soft braking when above speed cap
     private bool isStunned;
     private float stunTimer;
+    private float postStunRecoverTimer;
 
     // haunted enemies aggressively home toward their own goal
     private bool isHaunted;
@@ -114,6 +117,7 @@ public class EnemyX : MonoBehaviour
             if (stunTimer <= 0f)
             {
                 isStunned = false;
+                postStunRecoverTimer = postStunRecoverDuration;
             }
             else if (cachedEnemyGoal != null)
             {
@@ -123,7 +127,18 @@ public class EnemyX : MonoBehaviour
             return;
         }
 
+        if (postStunRecoverTimer > 0f)
+            postStunRecoverTimer -= Time.deltaTime;
+
         Move();
+    }
+
+    protected float GetPostStunForceScale()
+    {
+        if (postStunRecoverDuration <= 0f) return 1f;
+        return postStunRecoverTimer > 0f
+            ? 1f - (postStunRecoverTimer / postStunRecoverDuration)
+            : 1f;
     }
 
     // override in subclasses for type-specific movement
@@ -132,20 +147,21 @@ public class EnemyX : MonoBehaviour
         Vector3 toGoal = playerGoal.transform.position - transform.position;
         toGoal.y = 0f;
         Vector3 goalDirection = toGoal.normalized;
-        enemyRb.AddForce(goalDirection * speed, ForceMode.Force);
+        enemyRb.AddForce(goalDirection * speed * GetPostStunForceScale(), ForceMode.Force);
         ClampSpeed();
     }
 
-    // cap velocity magnitude without changing direction
+    // soft cap horizontal speed to avoid hard velocity snaps
     protected void ClampSpeed()
     {
         Vector3 vel = enemyRb.linearVelocity;
-        float yVel = vel.y; // preserve vertical (gravity/bounces)
-        vel.y = 0f;
-        if (vel.magnitude > speed)
-            vel = vel.normalized * speed;
-        vel.y = yVel;
-        enemyRb.linearVelocity = vel;
+        Vector3 flatVel = new Vector3(vel.x, 0f, vel.z);
+        float flatSpeed = flatVel.magnitude;
+        if (flatSpeed <= speed) return;
+
+        float excess = flatSpeed - speed;
+        Vector3 brakeDir = -flatVel.normalized;
+        enemyRb.AddForce(brakeDir * excess * overspeedBrake, ForceMode.Acceleration);
     }
 
     // trigger-based goal scoring (goals use isTrigger colliders)

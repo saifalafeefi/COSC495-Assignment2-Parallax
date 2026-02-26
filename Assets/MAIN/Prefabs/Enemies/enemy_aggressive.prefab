@@ -100,7 +100,7 @@ SphereCollider:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 8932280921958007952}
-  m_Material: {fileID: 0}
+  m_Material: {fileID: 13400000, guid: 705913170e39c457aabc669261e60fa0, type: 2}
   m_IncludeLayers:
     serializedVersion: 2
     m_Bits: 0
@@ -157,6 +157,8 @@ MonoBehaviour:
   playerGoal: {fileID: 0}
   stunSpeed: 3
   stunDuration: 2
+  postStunRecoverDuration: 2
+  overspeedBrake: 16
   aggroDetectRadius: 15
   aggroHomingForce: 80
   aggroHomingSpeed: 25

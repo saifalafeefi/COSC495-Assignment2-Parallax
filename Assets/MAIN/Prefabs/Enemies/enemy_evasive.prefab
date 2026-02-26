@@ -157,6 +157,8 @@ MonoBehaviour:
   playerGoal: {fileID: 0}
   stunSpeed: 4
   stunDuration: 3
+  postStunRecoverDuration: 1.5
+  overspeedBrake: 16
   dodgeInterval: 3
   dodgeDuration: 1.5
   dodgeStrength: 100

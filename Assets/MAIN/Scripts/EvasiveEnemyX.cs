@@ -24,6 +24,7 @@ public class EvasiveEnemyX : EnemyX
         toGoal.y = 0f; // keep movement on the ground plane
         Vector3 goalDirection = toGoal.normalized;
         Vector3 sideways = Vector3.Cross(goalDirection, Vector3.up);
+        float forceScale = GetPostStunForceScale();
 
         // tick dodge cooldown
         dodgeTimer -= Time.deltaTime;
@@ -39,11 +40,11 @@ public class EvasiveEnemyX : EnemyX
         {
             dodgeActiveTimer -= Time.deltaTime;
             Vector3 dodgeDir = (goalDirection + sideways * dodgeDirection * dodgeAngle).normalized;
-            enemyRb.AddForce(dodgeDir * speed * dodgeStrength, ForceMode.Force);
+            enemyRb.AddForce(dodgeDir * speed * dodgeStrength * forceScale, ForceMode.Force);
         }
         else
         {
-            enemyRb.AddForce(goalDirection * speed, ForceMode.Force);
+            enemyRb.AddForce(goalDirection * speed * forceScale, ForceMode.Force);
         }
         ClampSpeed();
     }
