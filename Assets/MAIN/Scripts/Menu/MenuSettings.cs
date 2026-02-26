@@ -15,6 +15,9 @@ public class MenuSettings : MonoBehaviour
     [Header("Speed Lines")]
     [SerializeField] Toggle speedLinesToggle;
 
+    [Header("Bloom")]
+    [SerializeField] Toggle bloomToggle;
+
     [Header("Skin Selection (Optional)")]
     [SerializeField] PlayerSkinApplier skinPreview;
     [SerializeField] TMP_Dropdown skinDropdown;
@@ -41,6 +44,12 @@ public class MenuSettings : MonoBehaviour
             speedLinesToggle.onValueChanged.AddListener(OnSpeedLinesToggled);
         }
 
+        if (bloomToggle != null)
+        {
+            bloomToggle.isOn = BloomToggle.SharedEnabled;
+            bloomToggle.onValueChanged.AddListener(OnBloomToggled);
+        }
+
         SetupSkinUI();
     }
 
@@ -51,6 +60,9 @@ public class MenuSettings : MonoBehaviour
 
         if (speedLinesToggle != null)
             speedLinesToggle.onValueChanged.RemoveListener(OnSpeedLinesToggled);
+
+        if (bloomToggle != null)
+            bloomToggle.onValueChanged.RemoveListener(OnBloomToggled);
 
         if (skinDropdown != null)
             skinDropdown.onValueChanged.RemoveListener(OnSkinChangedFromDropdown);
@@ -75,6 +87,13 @@ public class MenuSettings : MonoBehaviour
     {
         SpeedLinesEffect.SharedEnabled = enabled;
         SpeedLinesEffect.Save();
+    }
+
+    void OnBloomToggled(bool enabled)
+    {
+        BloomToggle.SharedEnabled = enabled;
+        BloomToggle.Save();
+        BloomToggle.Apply();
     }
 
     void UpdatePixelLabel(float value)

@@ -2026,6 +2026,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: BLOOM
       objectReference: {fileID: 0}
+    - target: {fileID: 5180196930436227811, guid: d3a238b044bfa164a93cbfb7c1ab3c8c, type: 3}
+      propertyPath: m_IsActive
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 8758912890875092672, guid: d3a238b044bfa164a93cbfb7c1ab3c8c, type: 3}
       propertyPath: m_LocalPosition.x
       value: 10.60763
