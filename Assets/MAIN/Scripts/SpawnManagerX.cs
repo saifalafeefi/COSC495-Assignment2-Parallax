@@ -121,6 +121,7 @@ public class SpawnManagerX : MonoBehaviour
         if (GameManagerX.Instance != null)
             GameManagerX.Instance.SetWaveTimer("Wave Clear!");
 
+        if (SFXManager.Instance != null) SFXManager.Instance.PlayCountdownTick();
         float remaining = waveCooldown;
         while (remaining > 0f)
         {
@@ -134,6 +135,7 @@ public class SpawnManagerX : MonoBehaviour
             GameManagerX.Instance.SetWaveTimer("");
 
         SpawnEnemyWave(waveCount);
+        if (SFXManager.Instance != null) SFXManager.Instance.PlayWaveStart();
         isCountingDown = false;
     }
 

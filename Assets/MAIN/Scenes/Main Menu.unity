@@ -6876,6 +6876,64 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1785769866}
   m_CullTransparentMesh: 1
+--- !u!1 &1833040486
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1833040488}
+  - component: {fileID: 1833040487}
+  m_Layer: 0
+  m_Name: SFXManager
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &1833040487
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1833040486}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a643a8896ea23304a98818c554be40ff, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::SFXManager
+  landingClip: {fileID: 8300000, guid: 52dd25d6bb2f60441b1e01fa1099b333, type: 3}
+  minFallHeight: 2.5
+  enemyHitClip: {fileID: 0}
+  enemyScoreClip: {fileID: 0}
+  playerGoalClip: {fileID: 8300000, guid: 9667471fd125fa4488cc4e28d649b809, type: 3}
+  powerupPickupClip: {fileID: 0}
+  smashLaunchClip: {fileID: 0}
+  smashDiveClip: {fileID: 0}
+  smashImpactClip: {fileID: 8300000, guid: 74211322710c65743900ab78785354a2, type: 3}
+  shieldBreakClip: {fileID: 8300000, guid: db75ce260d279194f9249e61d26ca188, type: 3}
+  giantSquishClip: {fileID: 8300000, guid: 24626bc9b2347964381eb4127eac4384, type: 3}
+  hauntApplyClip: {fileID: 8300000, guid: de2cc8b4123899047af4796df49c3d75, type: 3}
+  countdownTickClip: {fileID: 8300000, guid: 7a8d840f7c1e1124bbf6bbbbabbdebd2, type: 3}
+  waveStartClip: {fileID: 8300000, guid: e692fee537bcecd478133c4a26bff57e, type: 3}
+--- !u!4 &1833040488
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1833040486}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: -12.80859, y: 0.00001, z: 14.60867}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1852846219 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 5498477658271756792, guid: 67c5816f966b6f148988209464e3f199, type: 3}
@@ -8601,6 +8659,7 @@ SceneRoots:
   - {fileID: 1461615605}
   - {fileID: 1099366079}
   - {fileID: 264828501}
+  - {fileID: 1833040488}
   - {fileID: 1133233015}
   - {fileID: 2074188300}
   - {fileID: 1733134102}

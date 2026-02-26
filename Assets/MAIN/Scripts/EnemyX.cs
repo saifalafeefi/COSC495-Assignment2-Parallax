@@ -46,6 +46,7 @@ public class EnemyX : MonoBehaviour
     // haunted enemies lock onto their own goal hard and fast
     public void Haunt(float speed, float duration, GameObject vfxPrefab = null)
     {
+        if (!isHaunted && SFXManager.Instance != null) SFXManager.Instance.PlayHauntApply();
         isHaunted = true;
         isStunned = false; // haunt replaces stun
         hauntMoveSpeed = speed;

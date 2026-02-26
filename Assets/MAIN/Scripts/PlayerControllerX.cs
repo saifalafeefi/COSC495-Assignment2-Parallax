@@ -119,6 +119,8 @@ public class PlayerControllerX : MonoBehaviour
     private Vector3 landingTarget;
     private bool isAiming;
     private bool isDiving;
+    private float lastAirborneY; // track highest Y while airborne for landing SFX
+    private bool wasGrounded = true;
     private bool diveCollided;
     private bool diveRequested;
     private Vector3 lastSmashImpactPoint;
@@ -202,6 +204,23 @@ public class PlayerControllerX : MonoBehaviour
     {
         // always check ground state
         isGrounded = Physics.Raycast(transform.position, Vector3.down, groundCheckDistance);
+
+        // track fall height for landing SFX
+        if (!isGrounded)
+        {
+            if (transform.position.y > lastAirborneY)
+                lastAirborneY = transform.position.y;
+            wasGrounded = false;
+        }
+        else if (!wasGrounded)
+        {
+            // just landed — check if we fell far enough
+            float fallDistance = lastAirborneY - transform.position.y;
+            if (SFXManager.Instance != null && fallDistance >= SFXManager.Instance.MinFallHeight)
+                SFXManager.Instance.PlayLanding();
+            lastAirborneY = transform.position.y;
+            wasGrounded = true;
+        }
 
         // F key: during aiming phase → dive request; otherwise → start smash
         if (Input.GetKeyDown(KeyCode.F) && isAiming)
@@ -348,6 +367,7 @@ public class PlayerControllerX : MonoBehaviour
                         eRb.isKinematic = true;
                     }
                     StartCoroutine(SquishAndDestroy(c.gameObject));
+                    if (SFXManager.Instance != null) SFXManager.Instance.PlayGiantSquish();
                 }
             }
         }
@@ -372,6 +392,7 @@ public class PlayerControllerX : MonoBehaviour
                     Rigidbody enemyRb = col.GetComponent<Rigidbody>();
                     if (enemyRb != null) enemyRb.isKinematic = true;
                     StartCoroutine(ShrinkAndDestroy(col.gameObject, shieldShrinkDuration));
+                    if (SFXManager.Instance != null) SFXManager.Instance.PlayShieldBreak();
 
                     shieldHitsRemaining--;
                     if (shieldHitsRemaining <= 0)
@@ -400,6 +421,7 @@ public class PlayerControllerX : MonoBehaviour
     {
         if (other.TryGetComponent(out KnockbackPowerupPickup knockbackPickup))
         {
+            if (SFXManager.Instance != null) SFXManager.Instance.PlayPowerupPickup();
             ApplyKnockbackPickup(knockbackPickup);
             Destroy(other.gameObject);
             return;
@@ -407,6 +429,7 @@ public class PlayerControllerX : MonoBehaviour
 
         if (other.TryGetComponent(out SmashPowerupPickup smashPickup))
         {
+            if (SFXManager.Instance != null) SFXManager.Instance.PlayPowerupPickup();
             ApplySmashPickup(smashPickup);
             Destroy(other.gameObject);
             return;
@@ -414,6 +437,7 @@ public class PlayerControllerX : MonoBehaviour
 
         if (other.TryGetComponent(out ShieldPowerupPickup shieldPickup))
         {
+            if (SFXManager.Instance != null) SFXManager.Instance.PlayPowerupPickup();
             ApplyShieldPickup(shieldPickup);
             Destroy(other.gameObject);
             return;
@@ -421,6 +445,7 @@ public class PlayerControllerX : MonoBehaviour
 
         if (other.TryGetComponent(out GiantPowerupPickup giantPickup))
         {
+            if (SFXManager.Instance != null) SFXManager.Instance.PlayPowerupPickup();
             ApplyGiantPickup(giantPickup);
             Destroy(other.gameObject);
             return;
@@ -428,6 +453,7 @@ public class PlayerControllerX : MonoBehaviour
 
         if (other.TryGetComponent(out HauntPowerupPickup hauntPickup))
         {
+            if (SFXManager.Instance != null) SFXManager.Instance.PlayPowerupPickup();
             ApplyHauntPickup(hauntPickup);
             Destroy(other.gameObject);
             return;
@@ -791,6 +817,7 @@ public class PlayerControllerX : MonoBehaviour
         lastSmashImpactNormal = Vector3.up;
         lastSmashImpactNormalVariance = 0f;
         playerRb.AddForce(Vector3.up * smashJumpForce, ForceMode.Impulse);
+        if (SFXManager.Instance != null) SFXManager.Instance.PlaySmashLaunch();
 
         // wait for launch duration then transition to aiming
         yield return new WaitForSeconds(launchDuration);
@@ -867,6 +894,7 @@ public class PlayerControllerX : MonoBehaviour
 
         // tell cinemachine to ignore timeScale so camera keeps up during slow-mo dive
         if (cinemachineBrain != null) cinemachineBrain.IgnoreTimeScale = true;
+        if (SFXManager.Instance != null) SFXManager.Instance.PlaySmashDive();
 
         // dive until we hit something (ground, wall, enemy, anything)
         // switch to continuous so the ball can't tunnel through geometry at high speed
@@ -900,6 +928,7 @@ public class PlayerControllerX : MonoBehaviour
         Time.timeScale = 1f;
         Time.fixedDeltaTime = originalFixedDeltaTime;
         SpawnSmashImpactSmoke();
+        if (SFXManager.Instance != null) SFXManager.Instance.PlaySmashImpact();
         ApplySmashImpact();
 
         // consume one stack
@@ -1223,6 +1252,8 @@ public class PlayerControllerX : MonoBehaviour
 
         if (other.gameObject.CompareTag("Enemy"))
         {
+            if (SFXManager.Instance != null) SFXManager.Instance.PlayEnemyHit();
+
             // giant handles enemies via OverlapSphere, skip knockback
             if (isGiant) return;
 

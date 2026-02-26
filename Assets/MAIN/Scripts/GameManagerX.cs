@@ -79,6 +79,7 @@ public class GameManagerX : MonoBehaviour
     {
         score++;
         OnEnemyScored?.Invoke();
+        if (SFXManager.Instance != null) SFXManager.Instance.PlayEnemyScore();
         UpdateHUD();
     }
 
@@ -86,6 +87,7 @@ public class GameManagerX : MonoBehaviour
     public void EnemyReachedPlayerGoal()
     {
         lives--;
+        if (SFXManager.Instance != null) SFXManager.Instance.PlayPlayerGoal();
         if (lives <= 0)
         {
             lives = 0;
