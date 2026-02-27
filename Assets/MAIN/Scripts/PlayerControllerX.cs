@@ -14,9 +14,8 @@ public class PlayerControllerX : MonoBehaviour
     public float jumpForce = 8f; // upward impulse on jump
     public float groundCheckDistance = 1.5f; // raycast length for grounded check
 
-    private int knockbackStacks;
+    private float knockbackTimer;
     private GameObject powerupIndicator;
-    private int powerUpDuration = 5;
     public float turboStrength = 15.0f;
     public ParticleSystem turboParticle;
     public bool enableTurboVfx = true;
@@ -40,8 +39,7 @@ public class PlayerControllerX : MonoBehaviour
 
     private float normalStrength = 10; // normal knockback
     private float powerupStrength = 25; // boosted knockback
-    private Coroutine knockbackCoroutine; // tracked so we can reset the timer on re-pickup
-    private Vector3 knockbackStackMultiplier = Vector3.one; // scales stackSpacing for this powerup
+    private float knockbackDuration = 5f; // duration per pickup (read from prefab)
 
     // smash powerup
     private int smashPowerupStacks;
@@ -64,7 +62,7 @@ public class PlayerControllerX : MonoBehaviour
     private Vector3 shieldStackMultiplier = new Vector3(0.3f, 0.3f, 0.3f); // scales stackSpacing for this powerup
 
     // giant powerup
-    private int giantStacks;
+    private float giantTimer;
     private GameObject giantPowerupIndicator;
     private float giantScale = 2f;
     private float giantCameraDistance = 8f;      // camera distance while giant
@@ -72,38 +70,28 @@ public class PlayerControllerX : MonoBehaviour
     private float giantShrinkBackDuration = 3f; // how long shrink-back takes
     private float squishDuration = 1f;          // how long enemies flatten
     private float squishGroundOffset = 0.03f;   // vertical offset above detected ground for squished enemies
-    private Vector3 giantStackMultiplier = Vector3.one;
     private Vector3 originalPlayerScale;
     private bool isGiant;
     private bool isShrinkingBack;
     private Vector3 shrinkBackStartScale;
     private float shrinkBackElapsed;
-    private Coroutine giantCoroutine;
 
     // haunt powerup — touched enemies aggressively home toward their own goal
-    private int hauntStacks;
+    private float hauntTimer;
     private float hauntDuration = 8f;
     private float hauntSpeed = 15f;
     private float hauntEffectDuration = 5f;
     private GameObject hauntIndicator;
-    private Vector3 hauntStackMultiplier = Vector3.one;
-    private Coroutine hauntCoroutine;
     private GameObject hauntEnemyVfxPrefab; // particle effect to spawn on haunted enemies
 
-    // stacking visuals — each stack spawns a slightly larger copy of the indicator
+    // stacking visuals — charge/hit-based powerups still clone indicators per stack
     // X/Z = scale growth per stack, Y = vertical position offset per stack
     public Vector3 stackSpacing = new Vector3(0.3f, 0.15f, 0.3f);
     [SerializeField] private float indicatorYOffset = -0.6f; // vertical offset below player for indicators
-    private List<GameObject> knockbackIndicators = new List<GameObject>();
     private List<GameObject> smashIndicators = new List<GameObject>();
     private List<GameObject> shieldIndicators = new List<GameObject>();
-    private List<GameObject> giantIndicators = new List<GameObject>();
-    private List<GameObject> hauntIndicators = new List<GameObject>();
-    private Vector3 knockbackIndicatorBaseScale;
     private Vector3 smashIndicatorBaseScale;
     private Vector3 shieldIndicatorBaseScale;
-    private Vector3 giantIndicatorBaseScale;
-    private Vector3 hauntIndicatorBaseScale;
 
     // smash aiming system
     public GameObject landingIndicator;
@@ -151,17 +139,11 @@ public class PlayerControllerX : MonoBehaviour
             turboParticle.Stop();
         }
 
-        // save base scales for cloning extra stacks later
-        if (powerupIndicator != null)
-            knockbackIndicatorBaseScale = powerupIndicator.transform.lossyScale;
+        // save base scales for cloning extra stacks later (charge/hit-based only)
         if (smashPowerupIndicator != null)
             smashIndicatorBaseScale = smashPowerupIndicator.transform.lossyScale;
         if (shieldIndicator != null)
             shieldIndicatorBaseScale = new Vector3(shieldRadius * 2f, shieldRadius * 2f, shieldRadius * 2f);
-        if (giantPowerupIndicator != null)
-            giantIndicatorBaseScale = giantPowerupIndicator.transform.lossyScale;
-        if (hauntIndicator != null)
-            hauntIndicatorBaseScale = hauntIndicator.transform.lossyScale;
 
         // save original player scale for giant powerup
         originalPlayerScale = transform.localScale;
@@ -220,6 +202,41 @@ public class PlayerControllerX : MonoBehaviour
                 SFXManager.Instance.PlayLanding();
             lastAirborneY = transform.position.y;
             wasGrounded = true;
+        }
+
+        // tick duration-based powerup timers
+        if (knockbackTimer > 0f)
+        {
+            knockbackTimer -= Time.deltaTime;
+            if (knockbackTimer <= 0f)
+            {
+                knockbackTimer = 0f;
+                if (powerupIndicator != null) powerupIndicator.SetActive(false);
+            }
+        }
+
+        if (hauntTimer > 0f)
+        {
+            hauntTimer -= Time.deltaTime;
+            if (hauntTimer <= 0f)
+            {
+                hauntTimer = 0f;
+                if (hauntIndicator != null) hauntIndicator.SetActive(false);
+            }
+        }
+
+        if (giantTimer > 0f)
+        {
+            giantTimer -= Time.deltaTime;
+            if (giantTimer <= 0f)
+            {
+                giantTimer = 0f;
+                if (giantPowerupIndicator != null) giantPowerupIndicator.SetActive(false);
+                // begin shrink-back lerp (handled below, camera distance follows the same curve)
+                shrinkBackStartScale = transform.localScale;
+                shrinkBackElapsed = 0f;
+                isShrinkingBack = true;
+            }
         }
 
         // F key: during aiming phase → dive request; otherwise → start smash
@@ -325,13 +342,13 @@ public class PlayerControllerX : MonoBehaviour
             }
         }
 
-        // position originals + extra clones under the player (reusable helper eliminates 5x copy-paste)
+        // position indicators under the player
         Vector3 indicatorPos = transform.position + new Vector3(0, indicatorYOffset, 0);
 
-        UpdateIndicatorPosition(powerupIndicator, knockbackIndicators, knockbackStackMultiplier, indicatorPos);
+        if (powerupIndicator != null) powerupIndicator.transform.position = indicatorPos;
         UpdateIndicatorPosition(smashPowerupIndicator, smashIndicators, smashStackMultiplier, indicatorPos);
-        UpdateIndicatorPosition(giantPowerupIndicator, giantIndicators, giantStackMultiplier, indicatorPos);
-        UpdateIndicatorPosition(hauntIndicator, hauntIndicators, hauntStackMultiplier, indicatorPos);
+        if (giantPowerupIndicator != null) giantPowerupIndicator.transform.position = indicatorPos;
+        if (hauntIndicator != null) hauntIndicator.transform.position = indicatorPos;
 
         // shield is special: centered on player, scales to radius
         if (shieldIndicator != null)
@@ -508,27 +525,17 @@ public class PlayerControllerX : MonoBehaviour
 
     void ApplyKnockbackPickup(KnockbackPowerupPickup pickup)
     {
+        Vector3 unusedScale = Vector3.zero;
         if (pickup != null)
         {
-            powerUpDuration = pickup.durationSeconds;
+            knockbackDuration = pickup.durationSeconds;
             powerupStrength = pickup.boostedKnockbackStrength;
-            knockbackStackMultiplier = pickup.stackMultiplier;
-            EnsureIndicatorInstance(pickup.indicatorPrefab, ref powerupIndicator, ref knockbackIndicatorBaseScale);
+            EnsureIndicatorInstance(pickup.indicatorPrefab, ref powerupIndicator, ref unusedScale);
         }
 
-        knockbackStacks++;
-        if (knockbackStacks == 1)
-        {
-            if (powerupIndicator != null) powerupIndicator.SetActive(true);
-        }
-        else
-        {
-            SpawnExtraIndicator(powerupIndicator, knockbackIndicatorBaseScale, knockbackIndicators, false, knockbackStackMultiplier);
-        }
-
-        if (knockbackCoroutine != null)
-            StopCoroutine(knockbackCoroutine);
-        knockbackCoroutine = StartCoroutine(PowerupCooldown());
+        // extend remaining time by full duration
+        knockbackTimer += knockbackDuration;
+        if (powerupIndicator != null) powerupIndicator.SetActive(true);
     }
 
     void ApplySmashPickup(SmashPowerupPickup pickup)
@@ -582,6 +589,7 @@ public class PlayerControllerX : MonoBehaviour
 
     void ApplyGiantPickup(GiantPowerupPickup pickup)
     {
+        Vector3 unusedScale = Vector3.zero;
         if (pickup != null)
         {
             giantScale = pickup.giantScale;
@@ -590,19 +598,12 @@ public class PlayerControllerX : MonoBehaviour
             squishDuration = pickup.squishDuration;
             squishGroundOffset = pickup.squishGroundOffset;
             giantCameraDistance = pickup.cameraDistance;
-            giantStackMultiplier = pickup.stackMultiplier;
-            EnsureIndicatorInstance(pickup.indicatorPrefab, ref giantPowerupIndicator, ref giantIndicatorBaseScale);
+            EnsureIndicatorInstance(pickup.indicatorPrefab, ref giantPowerupIndicator, ref unusedScale);
         }
 
-        giantStacks++;
-        if (giantStacks == 1)
-        {
-            if (giantPowerupIndicator != null) giantPowerupIndicator.SetActive(true);
-        }
-        else
-        {
-            SpawnExtraIndicator(giantPowerupIndicator, giantIndicatorBaseScale, giantIndicators, false, giantStackMultiplier);
-        }
+        // extend remaining time by full duration
+        giantTimer += giantDuration;
+        if (giantPowerupIndicator != null) giantPowerupIndicator.SetActive(true);
 
         transform.localScale = originalPlayerScale * giantScale;
         isGiant = true;
@@ -611,55 +612,23 @@ public class PlayerControllerX : MonoBehaviour
         // push camera back so the bigger ball doesn't fill the screen
         if (shoulderShift != null)
             shoulderShift.ForceCameraDistance(giantCameraDistance);
-
-        if (giantCoroutine != null)
-            StopCoroutine(giantCoroutine);
-        giantCoroutine = StartCoroutine(GiantCooldown());
     }
 
     void ApplyHauntPickup(HauntPowerupPickup pickup)
     {
+        Vector3 unusedScale = Vector3.zero;
         if (pickup != null)
         {
             hauntDuration = pickup.hauntDuration;
             hauntSpeed = pickup.hauntSpeed;
             hauntEffectDuration = pickup.hauntEffectDuration;
-            hauntStackMultiplier = pickup.stackMultiplier;
             hauntEnemyVfxPrefab = pickup.hauntEnemyVfxPrefab;
-            EnsureIndicatorInstance(pickup.indicatorPrefab, ref hauntIndicator, ref hauntIndicatorBaseScale);
+            EnsureIndicatorInstance(pickup.indicatorPrefab, ref hauntIndicator, ref unusedScale);
         }
 
-        hauntStacks++;
-        if (hauntStacks == 1)
-        {
-            if (hauntIndicator != null) hauntIndicator.SetActive(true);
-        }
-        else
-        {
-            SpawnExtraIndicator(hauntIndicator, hauntIndicatorBaseScale, hauntIndicators, false, hauntStackMultiplier);
-        }
-
-        // reset timer on re-pickup (same as knockback)
-        if (hauntCoroutine != null)
-            StopCoroutine(hauntCoroutine);
-        hauntCoroutine = StartCoroutine(HauntCooldown());
-    }
-
-    // haunt buff wears off one stack at a time
-    IEnumerator HauntCooldown()
-    {
-        yield return new WaitForSeconds(hauntDuration);
-        hauntStacks--;
-        if (hauntStacks <= 0)
-        {
-            hauntStacks = 0;
-            ClearExtraIndicators(hauntIndicators);
-            if (hauntIndicator != null) hauntIndicator.SetActive(false);
-        }
-        else
-        {
-            RemoveExtraIndicator(hauntIndicators);
-        }
+        // extend remaining time by full duration
+        hauntTimer += hauntDuration;
+        if (hauntIndicator != null) hauntIndicator.SetActive(true);
     }
 
     // spawn an extra indicator clone for stacks beyond the first (bigger each time)
@@ -712,45 +681,6 @@ public class PlayerControllerX : MonoBehaviour
                 extras[i].transform.position = basePos + new Vector3(0, (i + 1) * stackSpacing.y * multiplier.y, 0);
     }
 
-    // knockback wears off one stack at a time
-    IEnumerator PowerupCooldown()
-    {
-        yield return new WaitForSeconds(powerUpDuration);
-        knockbackStacks--;
-        if (knockbackStacks <= 0)
-        {
-            knockbackStacks = 0;
-            ClearExtraIndicators(knockbackIndicators);
-            if (powerupIndicator != null) powerupIndicator.SetActive(false);
-        }
-        else
-        {
-            RemoveExtraIndicator(knockbackIndicators);
-        }
-    }
-
-    // giant duration expires, start shrinking back to normal
-    IEnumerator GiantCooldown()
-    {
-        yield return new WaitForSeconds(giantDuration);
-
-        giantStacks--;
-        if (giantStacks <= 0)
-        {
-            giantStacks = 0;
-            ClearExtraIndicators(giantIndicators);
-            if (giantPowerupIndicator != null) giantPowerupIndicator.SetActive(false);
-        }
-        else
-        {
-            RemoveExtraIndicator(giantIndicators);
-        }
-
-        // begin shrink-back lerp (handled in Update, camera distance follows the same curve)
-        shrinkBackStartScale = transform.localScale;
-        shrinkBackElapsed = 0f;
-        isShrinkingBack = true;
-    }
 
     // find the ground directly below a squished enemy so flattening always lands on the floor
     float GetSquishGroundY(GameObject target)
@@ -1258,7 +1188,7 @@ public class PlayerControllerX : MonoBehaviour
             if (isGiant) return;
 
             // haunt the enemy if buff is active
-            if (hauntStacks > 0)
+            if (hauntTimer > 0f)
             {
                 EnemyX enemy = other.gameObject.GetComponent<EnemyX>();
                 if (enemy != null) enemy.Haunt(hauntSpeed, hauntEffectDuration, hauntEnemyVfxPrefab);
@@ -1267,7 +1197,7 @@ public class PlayerControllerX : MonoBehaviour
             Rigidbody enemyRigidbody = other.gameObject.GetComponent<Rigidbody>();
             Vector3 awayFromPlayer = (other.gameObject.transform.position - transform.position).normalized;
 
-            if (knockbackStacks > 0)
+            if (knockbackTimer > 0f)
             {
                 enemyRigidbody.AddForce(awayFromPlayer * powerupStrength, ForceMode.Impulse);
             }
@@ -1279,11 +1209,20 @@ public class PlayerControllerX : MonoBehaviour
     }
 
     // read-only powerup state for external scripts (e.g. PlayerPowerupColor)
-    public bool IsKnockbackActive => knockbackStacks > 0;
+    public bool IsKnockbackActive => knockbackTimer > 0f;
     public bool IsSmashActive => smashPowerupStacks > 0;
     public bool IsShieldActive => shieldStacks > 0;
     public bool IsGiantActive => isGiant;
-    public bool IsHauntActive => hauntStacks > 0;
+    public bool IsHauntActive => hauntTimer > 0f;
+
+    // remaining seconds on each duration-based powerup (for timer UI)
+    public float KnockbackTimer => knockbackTimer;
+    public float GiantTimer => giantTimer + (isShrinkingBack ? (giantShrinkBackDuration - shrinkBackElapsed) : 0f);
+    public float HauntTimer => hauntTimer;
+    public int SmashStacks => smashPowerupStacks;
+    public int ShieldStacks => shieldStacks;
+    public int ShieldHitsRemaining => shieldHitsRemaining;
+    public int ShieldMaxHits => shieldMaxHits;
 
     // raw velocity magnitude (used by SpeedLinesEffect)
     public float CurrentSpeed => playerRb != null ? playerRb.linearVelocity.magnitude : 0f;

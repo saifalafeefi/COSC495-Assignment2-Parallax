@@ -67,6 +67,10 @@ public class SpawnManagerX : MonoBehaviour
         playerStartPos = player.transform.position;
         playerRb = player.GetComponent<Rigidbody>();
         timeSinceLastPowerup = 0f;
+
+        // timer should be stopped before the first wave starts
+        if (GameManagerX.Instance != null)
+            GameManagerX.Instance.SetWaveActive(false);
     }
 
     void OnEnable()
@@ -98,9 +102,13 @@ public class SpawnManagerX : MonoBehaviour
 
         // use static counter instead of FindGameObjectsWithTag every frame
         enemyCount = EnemyX.aliveCount;
+        if (enemyCount > 0 && !isCountingDown && GameManagerX.Instance != null)
+            GameManagerX.Instance.SetWaveActive(true);
 
         if (enemyCount == 0 && !isCountingDown)
         {
+            if (GameManagerX.Instance != null)
+                GameManagerX.Instance.SetWaveActive(false);
             StartCoroutine(WaveCountdown());
         }
 
@@ -116,6 +124,9 @@ public class SpawnManagerX : MonoBehaviour
     IEnumerator WaveCountdown()
     {
         isCountingDown = true;
+
+        if (GameManagerX.Instance != null)
+            GameManagerX.Instance.SetWaveActive(false);
 
         // show "Wave Clear!" briefly then countdown
         if (GameManagerX.Instance != null)
@@ -241,6 +252,7 @@ public class SpawnManagerX : MonoBehaviour
         if (GameManagerX.Instance != null)
         {
             GameManagerX.Instance.SetWave(waveCount);
+            GameManagerX.Instance.SetWaveActive(EnemyX.aliveCount > 0);
         }
     }
 

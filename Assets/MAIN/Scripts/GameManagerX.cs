@@ -16,6 +16,7 @@ public class GameManagerX : MonoBehaviour
     public TextMeshProUGUI livesText;
     public TextMeshProUGUI scoreText;
     public TextMeshProUGUI waveText;
+    public TextMeshProUGUI gameTimerText;
     public TextMeshProUGUI waveTimerText; // "Next wave in X..." countdown
 
     [Header("Pause")]
@@ -25,6 +26,7 @@ public class GameManagerX : MonoBehaviour
     public GameObject gameOverPanel;
     public TextMeshProUGUI finalScoreText;
     public TextMeshProUGUI finalWaveText;
+    public TextMeshProUGUI finalTimeText;
 
     // fired when an enemy is scored (knocked into enemy goal, shield kill, etc.)
     public static event System.Action OnEnemyScored;
@@ -34,6 +36,8 @@ public class GameManagerX : MonoBehaviour
 
     private int score;
     private int currentWave = 1;
+    private float totalGameplayTime;
+    private bool isWaveActive;
     private float prePauseTimeScale;
     private RotateCameraX cameraRotator;
 
@@ -63,10 +67,18 @@ public class GameManagerX : MonoBehaviour
             pausePanel.SetActive(false);
         }
         UpdateHUD();
+        UpdateGameTimerText();
     }
 
     void Update()
     {
+        // game timer runs only during active waves, and pauses on pause/game over
+        if (!isGameOver && !isPaused && isWaveActive)
+        {
+            totalGameplayTime += Time.unscaledDeltaTime;
+            UpdateGameTimerText();
+        }
+
         if (Input.GetKeyDown(KeyCode.Escape) && !isGameOver)
         {
             if (isPaused) ResumeGame();
@@ -103,6 +115,12 @@ public class GameManagerX : MonoBehaviour
         UpdateHUD();
     }
 
+    // called by SpawnManagerX when entering/leaving active combat
+    public void SetWaveActive(bool active)
+    {
+        isWaveActive = active;
+    }
+
     // show/hide the "Next wave in X..." text
     public void SetWaveTimer(string text)
     {
@@ -123,6 +141,7 @@ public class GameManagerX : MonoBehaviour
     void GameOver()
     {
         isGameOver = true;
+        isWaveActive = false;
         Time.timeScale = 0f;
 
         // unlock cursor so player can click buttons
@@ -135,6 +154,7 @@ public class GameManagerX : MonoBehaviour
         }
         if (finalScoreText != null) finalScoreText.text = "Score: " + score;
         if (finalWaveText != null) finalWaveText.text = "Wave: " + currentWave;
+        if (finalTimeText != null) finalTimeText.text = "Time: " + FormatTime(totalGameplayTime);
     }
 
     void PauseGame()
@@ -193,5 +213,19 @@ public class GameManagerX : MonoBehaviour
 #else
         Application.Quit();
 #endif
+    }
+
+    void UpdateGameTimerText()
+    {
+        if (gameTimerText != null)
+            gameTimerText.text = "Time: " + FormatTime(totalGameplayTime);
+    }
+
+    string FormatTime(float seconds)
+    {
+        int totalSeconds = Mathf.FloorToInt(Mathf.Max(0f, seconds));
+        int mins = totalSeconds / 60;
+        int secs = totalSeconds % 60;
+        return mins.ToString("00") + ":" + secs.ToString("00");
     }
 }
