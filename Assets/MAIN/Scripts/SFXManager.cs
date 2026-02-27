@@ -32,6 +32,24 @@ public class SFXManager : MonoBehaviour
 
     AudioSource audioSource;
 
+    // shared across scenes — MenuSettings writes these
+    public static float SharedVolume { get; set; } = 1f;
+    public static float SharedMasterVolume { get; set; } = 1f;
+
+    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
+    static void LoadSavedVolumes()
+    {
+        SharedVolume = PlayerPrefs.GetFloat("SFXVolume", 1f);
+        SharedMasterVolume = PlayerPrefs.GetFloat("MasterVolume", 1f);
+    }
+
+    public static void Save()
+    {
+        PlayerPrefs.SetFloat("SFXVolume", SharedVolume);
+        PlayerPrefs.SetFloat("MasterVolume", SharedMasterVolume);
+        PlayerPrefs.Save();
+    }
+
     void Awake()
     {
         if (Instance != null)
@@ -47,6 +65,13 @@ public class SFXManager : MonoBehaviour
         audioSource.playOnAwake = false;
     }
 
+    // call after changing master or sfx volume to apply immediately
+    public void ApplyVolume()
+    {
+        if (audioSource != null)
+            audioSource.volume = SharedMasterVolume * SharedVolume;
+    }
+
     void Update()
     {
         // pause/unpause SFX with game pause (timeScale = 0)
@@ -56,11 +81,11 @@ public class SFXManager : MonoBehaviour
         else if (!paused && !audioSource.isPlaying) audioSource.UnPause();
     }
 
-    // generic play — for anything not covered by a named method
+    // generic play — volume = master * sfx
     public void Play(AudioClip clip)
     {
         if (clip != null && audioSource != null)
-            audioSource.PlayOneShot(clip);
+            audioSource.PlayOneShot(clip, SharedMasterVolume * SharedVolume);
     }
 
     // --- named helpers so callers don't need clip references ---

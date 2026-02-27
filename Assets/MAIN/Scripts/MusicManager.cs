@@ -39,9 +39,16 @@ public class MusicManager : MonoBehaviour
         audioSource = gameObject.AddComponent<AudioSource>();
         audioSource.clip = musicClip;
         audioSource.loop = true;
-        audioSource.volume = SharedVolume;
+        audioSource.volume = SFXManager.SharedMasterVolume * SharedVolume;
         audioSource.playOnAwake = false;
         audioSource.Play();
+    }
+
+    // effective volume = master * music
+    public void ApplyVolume()
+    {
+        if (audioSource != null)
+            audioSource.volume = SFXManager.SharedMasterVolume * SharedVolume;
     }
 
     // keep volume in sync if changed at runtime

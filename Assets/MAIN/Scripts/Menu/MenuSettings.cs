@@ -15,9 +15,13 @@ public class MenuSettings : MonoBehaviour
     [Header("Speed Lines")]
     [SerializeField] Toggle speedLinesToggle;
 
-    [Header("Music Volume")]
+    [Header("Audio")]
+    [SerializeField] Slider masterVolumeSlider;
+    [SerializeField] TextMeshProUGUI masterVolumeLabel;
     [SerializeField] Slider musicVolumeSlider;
     [SerializeField] TextMeshProUGUI musicVolumeLabel;
+    [SerializeField] Slider sfxVolumeSlider;
+    [SerializeField] TextMeshProUGUI sfxVolumeLabel;
 
     [Header("Bloom")]
     [SerializeField] Toggle bloomToggle;
@@ -42,6 +46,16 @@ public class MenuSettings : MonoBehaviour
             UpdatePixelLabel(pixelSizeSlider.value);
         }
 
+        if (masterVolumeSlider != null)
+        {
+            masterVolumeSlider.wholeNumbers = false;
+            masterVolumeSlider.minValue = 0f;
+            masterVolumeSlider.maxValue = 1f;
+            masterVolumeSlider.value = SFXManager.SharedMasterVolume;
+            masterVolumeSlider.onValueChanged.AddListener(OnMasterVolumeChanged);
+            UpdateMasterVolumeLabel(masterVolumeSlider.value);
+        }
+
         if (musicVolumeSlider != null)
         {
             musicVolumeSlider.wholeNumbers = false;
@@ -50,6 +64,16 @@ public class MenuSettings : MonoBehaviour
             musicVolumeSlider.value = MusicManager.SharedVolume;
             musicVolumeSlider.onValueChanged.AddListener(OnMusicVolumeChanged);
             UpdateMusicVolumeLabel(musicVolumeSlider.value);
+        }
+
+        if (sfxVolumeSlider != null)
+        {
+            sfxVolumeSlider.wholeNumbers = false;
+            sfxVolumeSlider.minValue = 0f;
+            sfxVolumeSlider.maxValue = 1f;
+            sfxVolumeSlider.value = SFXManager.SharedVolume;
+            sfxVolumeSlider.onValueChanged.AddListener(OnSFXVolumeChanged);
+            UpdateSFXVolumeLabel(sfxVolumeSlider.value);
         }
 
         if (speedLinesToggle != null)
@@ -72,8 +96,14 @@ public class MenuSettings : MonoBehaviour
         if (pixelSizeSlider != null)
             pixelSizeSlider.onValueChanged.RemoveListener(OnPixelSizeChanged);
 
+        if (masterVolumeSlider != null)
+            masterVolumeSlider.onValueChanged.RemoveListener(OnMasterVolumeChanged);
+
         if (musicVolumeSlider != null)
             musicVolumeSlider.onValueChanged.RemoveListener(OnMusicVolumeChanged);
+
+        if (sfxVolumeSlider != null)
+            sfxVolumeSlider.onValueChanged.RemoveListener(OnSFXVolumeChanged);
 
         if (speedLinesToggle != null)
             speedLinesToggle.onValueChanged.RemoveListener(OnSpeedLinesToggled);
@@ -100,23 +130,55 @@ public class MenuSettings : MonoBehaviour
         UpdatePixelLabel(value);
     }
 
+    void OnMasterVolumeChanged(float value)
+    {
+        SFXManager.SharedMasterVolume = value;
+        SFXManager.Save();
+        ApplyAllAudioVolumes();
+        UpdateMasterVolumeLabel(value);
+    }
+
     void OnMusicVolumeChanged(float value)
     {
         MusicManager.SharedVolume = value;
         MusicManager.Save();
-
-        // update the live instance if it exists
-        var live = FindAnyObjectByType<MusicManager>();
-        if (live != null)
-            live.SetVolume(value);
-
+        ApplyAllAudioVolumes();
         UpdateMusicVolumeLabel(value);
+    }
+
+    void OnSFXVolumeChanged(float value)
+    {
+        SFXManager.SharedVolume = value;
+        SFXManager.Save();
+        ApplyAllAudioVolumes();
+        UpdateSFXVolumeLabel(value);
+    }
+
+    // push master * individual volumes to both live managers
+    void ApplyAllAudioVolumes()
+    {
+        var music = FindAnyObjectByType<MusicManager>();
+        if (music != null) music.ApplyVolume();
+
+        if (SFXManager.Instance != null) SFXManager.Instance.ApplyVolume();
+    }
+
+    void UpdateMasterVolumeLabel(float value)
+    {
+        if (masterVolumeLabel != null)
+            masterVolumeLabel.text = $"Master: {Mathf.RoundToInt(value * 100)}%";
     }
 
     void UpdateMusicVolumeLabel(float value)
     {
         if (musicVolumeLabel != null)
             musicVolumeLabel.text = $"Music: {Mathf.RoundToInt(value * 100)}%";
+    }
+
+    void UpdateSFXVolumeLabel(float value)
+    {
+        if (sfxVolumeLabel != null)
+            sfxVolumeLabel.text = $"SFX: {Mathf.RoundToInt(value * 100)}%";
     }
 
     void OnSpeedLinesToggled(bool enabled)
