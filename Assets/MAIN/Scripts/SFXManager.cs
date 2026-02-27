@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 public class SFXManager : MonoBehaviour
 {
@@ -31,6 +32,7 @@ public class SFXManager : MonoBehaviour
     [SerializeField] AudioClip waveStartClip;        // new wave begins
 
     AudioSource audioSource;
+    bool pausedByMenu;
 
     // shared across scenes — MenuSettings writes these
     public static float SharedVolume { get; set; } = 1f;
@@ -60,6 +62,7 @@ public class SFXManager : MonoBehaviour
 
         Instance = this;
         DontDestroyOnLoad(gameObject);
+        SceneManager.activeSceneChanged += OnActiveSceneChanged;
 
         audioSource = gameObject.AddComponent<AudioSource>();
         audioSource.playOnAwake = false;
@@ -74,11 +77,21 @@ public class SFXManager : MonoBehaviour
 
     void Update()
     {
-        // pause/unpause SFX with game pause (timeScale = 0)
+        // pause/unpause SFX only for pause menu (not game over)
         if (audioSource == null) return;
-        bool paused = Time.timeScale == 0f;
-        if (paused && audioSource.isPlaying) audioSource.Pause();
-        else if (!paused && !audioSource.isPlaying) audioSource.UnPause();
+
+        bool shouldPauseForMenu = GameManagerX.Instance != null && GameManagerX.Instance.isPaused;
+
+        if (shouldPauseForMenu && !pausedByMenu)
+        {
+            audioSource.Pause();
+            pausedByMenu = true;
+        }
+        else if (!shouldPauseForMenu && pausedByMenu)
+        {
+            audioSource.UnPause();
+            pausedByMenu = false;
+        }
     }
 
     // generic play — volume = master * sfx
@@ -106,4 +119,19 @@ public class SFXManager : MonoBehaviour
 
     // landing needs height tracking — called from PlayerControllerX
     public float MinFallHeight => minFallHeight;
+
+    void OnActiveSceneChanged(Scene oldScene, Scene newScene)
+    {
+        // don't let one-shots carry across scenes
+        if (audioSource == null) return;
+        audioSource.Stop();
+        pausedByMenu = false;
+    }
+
+    void OnDestroy()
+    {
+        if (Instance == this)
+            Instance = null;
+        SceneManager.activeSceneChanged -= OnActiveSceneChanged;
+    }
 }
