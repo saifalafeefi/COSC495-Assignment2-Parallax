@@ -368,11 +368,11 @@ public class PlayerControllerX : MonoBehaviour
             {
                 if (c.CompareTag("Enemy"))
                 {
+                    EnemyX enemyAI = c.GetComponent<EnemyX>();
                     if (GameManagerX.Instance != null)
-                        GameManagerX.Instance.EnemyScored();
+                        GameManagerX.Instance.EnemyScored(enemyAI);
 
                     c.gameObject.tag = "Untagged";
-                    EnemyX enemyAI = c.GetComponent<EnemyX>();
                     if (enemyAI != null) enemyAI.enabled = false;
                     c.enabled = false;
                     Rigidbody eRb = c.GetComponent<Rigidbody>();
@@ -397,14 +397,14 @@ public class PlayerControllerX : MonoBehaviour
             {
                 if (col.CompareTag("Enemy"))
                 {
+                    EnemyX enemyAI = col.GetComponent<EnemyX>();
                     if (GameManagerX.Instance != null)
                     {
-                        GameManagerX.Instance.EnemyScored();
+                        GameManagerX.Instance.EnemyScored(enemyAI);
                     }
 
                     // untag so it won't be detected again, disable AI, then shrink away
                     col.gameObject.tag = "Untagged";
-                    EnemyX enemyAI = col.GetComponent<EnemyX>();
                     if (enemyAI != null) enemyAI.enabled = false;
                     Rigidbody enemyRb = col.GetComponent<Rigidbody>();
                     if (enemyRb != null) enemyRb.isKinematic = true;

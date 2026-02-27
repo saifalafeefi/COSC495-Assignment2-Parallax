@@ -11,6 +11,11 @@ public class GameManagerX : MonoBehaviour
 
     [Header("Game Settings")]
     public int lives = 3;
+    [Header("Scoring")]
+    [SerializeField] private int normalEnemyPoints = 5;
+    [SerializeField] private int aggressiveEnemyPoints = 10;
+    [SerializeField] private int evasiveEnemyPoints = 10;
+    [SerializeField] private int tankEnemyPoints = 20;
 
     [Header("HUD")]
     public TextMeshProUGUI livesText;
@@ -87,9 +92,18 @@ public class GameManagerX : MonoBehaviour
     }
 
     // called when an enemy is knocked into the enemy goal
+    public void EnemyScored(EnemyX enemy)
+    {
+        score += GetEnemyPoints(enemy);
+        OnEnemyScored?.Invoke();
+        if (SFXManager.Instance != null) SFXManager.Instance.PlayEnemyScore();
+        UpdateHUD();
+    }
+
+    // fallback for legacy calls where enemy reference isn't available
     public void EnemyScored()
     {
-        score++;
+        score += normalEnemyPoints;
         OnEnemyScored?.Invoke();
         if (SFXManager.Instance != null) SFXManager.Instance.PlayEnemyScore();
         UpdateHUD();
@@ -227,5 +241,14 @@ public class GameManagerX : MonoBehaviour
         int mins = totalSeconds / 60;
         int secs = totalSeconds % 60;
         return mins.ToString("00") + ":" + secs.ToString("00");
+    }
+
+    int GetEnemyPoints(EnemyX enemy)
+    {
+        if (enemy == null) return normalEnemyPoints;
+        if (enemy is TankEnemyX) return tankEnemyPoints;
+        if (enemy is AggressiveEnemyX) return aggressiveEnemyPoints;
+        if (enemy is EvasiveEnemyX) return evasiveEnemyPoints;
+        return normalEnemyPoints;
     }
 }

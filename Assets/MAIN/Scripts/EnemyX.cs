@@ -171,7 +171,7 @@ public class EnemyX : MonoBehaviour
         if (other.gameObject.name == "Enemy Goal")
         {
             if (GameManagerX.Instance != null)
-                GameManagerX.Instance.EnemyScored();
+                GameManagerX.Instance.EnemyScored(this);
             Destroy(gameObject);
         }
         else if (other.gameObject.name == "Player Goal")
