@@ -128,9 +128,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::SmashPowerupPickup
   smashJumpForce: 60
-  smashRadius: 15
+  smashRadius: 30
   maxSmashForce: 50
-  minSmashForce: 10
+  minSmashForce: 25
   indicatorPrefab: {fileID: 1230671616877785706, guid: dbd389710b1951e4da5ef1cac2c6a147, type: 3}
   stackMultiplier: {x: 1, y: 1, z: 1}
 --- !u!114 &-8142645192446859753

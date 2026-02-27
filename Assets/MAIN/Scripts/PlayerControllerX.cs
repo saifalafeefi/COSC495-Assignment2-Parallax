@@ -13,6 +13,9 @@ public class PlayerControllerX : MonoBehaviour
     public float gravityMultiplier = 2.5f; // extra gravity so the ball doesn't feel floaty
     public float jumpForce = 8f; // upward impulse on jump
     public float groundCheckDistance = 1.5f; // raycast length for grounded check
+    [SerializeField] private LayerMask groundCheckLayers = ~0; // what counts as ground for movement
+    [SerializeField] private float groundContactNormalMin = 0.5f; // min upward normal to count as ground contact
+    [SerializeField] private float landingMinImpactSpeed = 6f; // fallback trigger when drop height is small but impact is hard
 
     private float knockbackTimer;
     private GameObject powerupIndicator;
@@ -107,8 +110,9 @@ public class PlayerControllerX : MonoBehaviour
     private Vector3 landingTarget;
     private bool isAiming;
     private bool isDiving;
-    private float lastAirborneY; // track highest Y while airborne for landing SFX
-    private bool wasGrounded = true;
+    private float airbornePeakY; // highest Y reached during current airborne window
+    private bool landingSfxArmed; // arms when leaving ground, disarms on first ground contact
+    private float lastVerticalVelocity;
     private bool diveCollided;
     private bool diveRequested;
     private Vector3 lastSmashImpactPoint;
@@ -175,6 +179,8 @@ public class PlayerControllerX : MonoBehaviour
 
     void FixedUpdate()
     {
+        lastVerticalVelocity = playerRb.linearVelocity.y;
+
         // apply extra gravity so the ball falls snappier
         if (playerRb.useGravity && !isGrounded)
         {
@@ -185,23 +191,24 @@ public class PlayerControllerX : MonoBehaviour
     void Update()
     {
         // always check ground state
-        isGrounded = Physics.Raycast(transform.position, Vector3.down, groundCheckDistance);
+        isGrounded = CheckGrounded();
 
-        // track fall height for landing SFX
+        // arm landing SFX once per airborne cycle, and track peak height while in the air
         if (!isGrounded)
         {
-            if (transform.position.y > lastAirborneY)
-                lastAirborneY = transform.position.y;
-            wasGrounded = false;
+            if (!landingSfxArmed)
+            {
+                landingSfxArmed = true;
+                airbornePeakY = transform.position.y;
+            }
+            else if (transform.position.y > airbornePeakY)
+            {
+                airbornePeakY = transform.position.y;
+            }
         }
-        else if (!wasGrounded)
+        else if (!landingSfxArmed)
         {
-            // just landed — check if we fell far enough
-            float fallDistance = lastAirborneY - transform.position.y;
-            if (SFXManager.Instance != null && fallDistance >= SFXManager.Instance.MinFallHeight)
-                SFXManager.Instance.PlayLanding();
-            lastAirborneY = transform.position.y;
-            wasGrounded = true;
+            airbornePeakY = transform.position.y;
         }
 
         // tick duration-based powerup timers
@@ -1180,6 +1187,8 @@ public class PlayerControllerX : MonoBehaviour
             return;
         }
 
+        TryPlayLandingSfx(other);
+
         if (other.gameObject.CompareTag("Enemy"))
         {
             if (SFXManager.Instance != null) SFXManager.Instance.PlayEnemyHit();
@@ -1208,7 +1217,56 @@ public class PlayerControllerX : MonoBehaviour
         }
     }
 
-    // read-only powerup state for external scripts (e.g. PlayerPowerupColor)
+    bool CheckGrounded()
+    {
+        if (Physics.Raycast(
+            transform.position,
+            Vector3.down,
+            out RaycastHit hit,
+            groundCheckDistance,
+            groundCheckLayers,
+            QueryTriggerInteraction.Ignore))
+        {
+            // don't treat enemies as ground
+            if (hit.collider != null && hit.collider.CompareTag("Enemy"))
+                return false;
+            return true;
+        }
+
+        return false;
+    }
+
+    void TryPlayLandingSfx(Collision other)
+    {
+        if (!landingSfxArmed) return;
+        if (SFXManager.Instance == null) return;
+        if (other == null || other.collider == null) return;
+        if (other.collider.isTrigger) return;
+        if (other.gameObject.CompareTag("Enemy")) return;
+
+        bool groundLikeContact = false;
+        int contacts = other.contactCount;
+        for (int i = 0; i < contacts; i++)
+        {
+            ContactPoint cp = other.GetContact(i);
+            if (cp.normal.y >= groundContactNormalMin)
+            {
+                groundLikeContact = true;
+                break;
+            }
+        }
+        if (!groundLikeContact) return;
+
+        float fallDistance = airbornePeakY - transform.position.y;
+        float impactSpeed = Mathf.Max(0f, -lastVerticalVelocity);
+        if (fallDistance >= SFXManager.Instance.MinFallHeight || impactSpeed >= landingMinImpactSpeed)
+            SFXManager.Instance.PlayLanding();
+
+        landingSfxArmed = false;
+        airbornePeakY = transform.position.y;
+    }
+
+    // read-only powerup state for external UI/visual scripts
     public bool IsKnockbackActive => knockbackTimer > 0f;
     public bool IsSmashActive => smashPowerupStacks > 0;
     public bool IsShieldActive => shieldStacks > 0;

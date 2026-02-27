@@ -238,8 +238,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0a8e8d57d2c24ed1a972b3cf2f1526a1, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::KnockbackPowerupPickup
-  durationSeconds: 5
-  boostedKnockbackStrength: 25
+  durationSeconds: 10
+  boostedKnockbackStrength: 35
   indicatorPrefab: {fileID: 1230671616877785706, guid: 4776cf22c17de4d44aafe53d87cafafe, type: 3}
   stackMultiplier: {x: 1, y: 1, z: 1}
 --- !u!114 &8251792965607768301

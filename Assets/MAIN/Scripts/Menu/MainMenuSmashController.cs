@@ -95,6 +95,12 @@ public class MainMenuSmashController : MonoBehaviour
     readonly List<Renderer> forcedHiddenRenderers = new List<Renderer>();
     readonly List<Collider> forcedHiddenColliders = new List<Collider>();
 
+    void Awake()
+    {
+        Cursor.lockState = CursorLockMode.Locked;
+        Cursor.visible = false;
+    }
+
     void Start()
     {
         if (playerRb != null)

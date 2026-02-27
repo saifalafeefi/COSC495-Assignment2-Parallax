@@ -14,7 +14,6 @@ GameObject:
   - component: {fileID: 3814323110946094714}
   - component: {fileID: 4005209303313156299}
   - component: {fileID: 4802255550460497210}
-  - component: {fileID: 3381019616229785253}
   - component: {fileID: 2040572753973794568}
   m_Layer: 0
   m_Name: Player
@@ -162,6 +161,11 @@ MonoBehaviour:
   gravityMultiplier: 3
   jumpForce: 16
   groundCheckDistance: 1.5
+  groundCheckLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  groundContactNormalMin: 0.5
+  landingMinImpactSpeed: 6
   turboStrength: 15
   turboParticle: {fileID: 0}
   enableTurboVfx: 1
@@ -190,27 +194,6 @@ MonoBehaviour:
   maxDiveSpeed: 3000
   launchDuration: 0.5
   smashCameraOffset: {x: 2, y: -0.5, z: 2.5}
---- !u!114 &3381019616229785253
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7938855902651581350}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 4a85ee97eb4a53449b8e818c068f883f, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::PlayerPowerupColor
-  overlayMaterial: {fileID: 0}
-  knockbackColor: {r: 1, g: 0.89, b: 0, a: 0.9019608}
-  smashColor: {r: 1, g: 0, b: 0, a: 0.9019608}
-  shieldColor: {r: 0, g: 0.940083, b: 1, a: 0.9019608}
-  giantColor: {r: 0, g: 1, b: 0.26168227, a: 0.9019608}
-  hauntColor: {r: 1, g: 0, b: 1, a: 0.9019608}
-  noiseScale: 2
-  flowSpeed: 3
-  fadeSpeed: 3
 --- !u!114 &2040572753973794568
 MonoBehaviour:
   m_ObjectHideFlags: 0

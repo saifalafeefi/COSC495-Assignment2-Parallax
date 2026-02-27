@@ -62,6 +62,7 @@ public class GameManagerX : MonoBehaviour
     void Start()
     {
         cameraRotator = FindObjectOfType<RotateCameraX>();
+        LockCursorForGameplay();
 
         if (gameOverPanel != null)
         {
@@ -203,6 +204,7 @@ public class GameManagerX : MonoBehaviour
         {
             pausePanel.SetActive(false);
         }
+        LockCursorForGameplay();
     }
 
     // hooked to Restart button onClick
@@ -250,5 +252,11 @@ public class GameManagerX : MonoBehaviour
         if (enemy is AggressiveEnemyX) return aggressiveEnemyPoints;
         if (enemy is EvasiveEnemyX) return evasiveEnemyPoints;
         return normalEnemyPoints;
+    }
+
+    void LockCursorForGameplay()
+    {
+        Cursor.lockState = CursorLockMode.Locked;
+        Cursor.visible = false;
     }
 }
