@@ -26,6 +26,9 @@ public class MenuSettings : MonoBehaviour
     [Header("Bloom")]
     [SerializeField] Toggle bloomToggle;
 
+    [Header("Grass")]
+    [SerializeField] Toggle grassToggle;
+
     [Header("Skin Selection (Optional)")]
     [SerializeField] PlayerSkinApplier skinPreview;
     [SerializeField] TMP_Dropdown skinDropdown;
@@ -88,6 +91,12 @@ public class MenuSettings : MonoBehaviour
             bloomToggle.onValueChanged.AddListener(OnBloomToggled);
         }
 
+        if (grassToggle != null)
+        {
+            grassToggle.isOn = GrassToggle.SharedEnabled;
+            grassToggle.onValueChanged.AddListener(OnGrassToggled);
+        }
+
         SetupSkinUI();
     }
 
@@ -110,6 +119,9 @@ public class MenuSettings : MonoBehaviour
 
         if (bloomToggle != null)
             bloomToggle.onValueChanged.RemoveListener(OnBloomToggled);
+
+        if (grassToggle != null)
+            grassToggle.onValueChanged.RemoveListener(OnGrassToggled);
 
         if (skinDropdown != null)
             skinDropdown.onValueChanged.RemoveListener(OnSkinChangedFromDropdown);
@@ -192,6 +204,13 @@ public class MenuSettings : MonoBehaviour
         BloomToggle.SharedEnabled = enabled;
         BloomToggle.Save();
         BloomToggle.Apply();
+    }
+
+    void OnGrassToggled(bool enabled)
+    {
+        GrassToggle.SharedEnabled = enabled;
+        GrassToggle.Save();
+        GrassToggle.Apply();
     }
 
     void UpdatePixelLabel(float value)

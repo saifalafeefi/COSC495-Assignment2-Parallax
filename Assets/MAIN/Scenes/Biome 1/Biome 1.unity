@@ -580,6 +580,63 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f4688fdb7df04437aeb418b961361dc5, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Unity.TextMeshPro::TMPro.TextMeshProUGUI
+--- !u!1001 &551738301
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 0}
+    m_Modifications:
+    - target: {fileID: 2297104980727174209, guid: 86e4aa4e42b769b43879791f855f2d39, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 48.87651
+      objectReference: {fileID: 0}
+    - target: {fileID: 2297104980727174209, guid: 86e4aa4e42b769b43879791f855f2d39, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 54.37001
+      objectReference: {fileID: 0}
+    - target: {fileID: 2297104980727174209, guid: 86e4aa4e42b769b43879791f855f2d39, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: -8.3887
+      objectReference: {fileID: 0}
+    - target: {fileID: 2297104980727174209, guid: 86e4aa4e42b769b43879791f855f2d39, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 2297104980727174209, guid: 86e4aa4e42b769b43879791f855f2d39, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2297104980727174209, guid: 86e4aa4e42b769b43879791f855f2d39, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2297104980727174209, guid: 86e4aa4e42b769b43879791f855f2d39, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2297104980727174209, guid: 86e4aa4e42b769b43879791f855f2d39, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2297104980727174209, guid: 86e4aa4e42b769b43879791f855f2d39, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2297104980727174209, guid: 86e4aa4e42b769b43879791f855f2d39, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2982567758514116090, guid: 86e4aa4e42b769b43879791f855f2d39, type: 3}
+      propertyPath: m_Name
+      value: GRASS_MANAGER
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: 86e4aa4e42b769b43879791f855f2d39, type: 3}
 --- !u!1001 &572491064
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -721,67 +778,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5036a60f22d8542ca830e4578804462b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
---- !u!1 &846026547
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 846026550}
-  - component: {fileID: 846026549}
-  - component: {fileID: 846026548}
-  m_Layer: 0
-  m_Name: GRASS_MANAGER
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!114 &846026548
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 846026547}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: a5a5033f7080c5549a9cc007d2df0a29, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: MicahW.PointGrassRenderer.Runtime::MicahW.PointGrass.PointGrassDisplacementManager
---- !u!114 &846026549
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 846026547}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: d938393f58ae1e844b929a6d939683ec, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: MicahW.PointGrassRenderer.Runtime::MicahW.PointGrass.PointGrassWind
-  windScale: 0.25
-  noiseRange: {x: -0.5, y: 1}
-  windDirection: {x: 0.3, y: 0, z: 0.7}
-  windScroll: {x: 0.3, y: 0, z: 0.7}
---- !u!4 &846026550
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 846026547}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 48.87651, y: 54.37001, z: -8.3887}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &861181409 stripped
 MonoBehaviour:
   m_CorrespondingSourceObject: {fileID: 1962224019584683861, guid: ec39fb72702182f4caa41690ff893e6f, type: 3}
@@ -3170,5 +3166,5 @@ SceneRoots:
   - {fileID: 172624562}
   - {fileID: 209295444}
   - {fileID: 961386468}
-  - {fileID: 846026550}
+  - {fileID: 551738301}
   - {fileID: 572491064}
