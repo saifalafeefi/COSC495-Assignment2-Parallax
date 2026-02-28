@@ -10,7 +10,7 @@ using UnityEditor;
 
 public class MainMenuSmashController : MonoBehaviour
 {
-    enum MenuState { Aiming, Diving, Impact, TransitionOut, Settings, Skins, BiomeSelection }
+    enum MenuState { Aiming, Diving, Impact, TransitionOut, Settings, Skins, BiomeSelection, Tutorial }
 
     [Header("References")]
     [SerializeField] Transform player;
@@ -69,6 +69,19 @@ public class MainMenuSmashController : MonoBehaviour
     [SerializeField] GameObject biomePanel;
     [SerializeField] float biomeDelay = 0.8f;
     [SerializeField] List<BiomeEntry> biomes = new List<BiomeEntry>();
+
+    [Header("Tutorial View")]
+    [Tooltip("Camera position when viewing tutorial")]
+    [SerializeField] Transform tutorialCameraPoint;
+    [Tooltip("Where 3D preview models spawn in front of the camera")]
+    [SerializeField] Transform tutorialDisplayPoint;
+    [Tooltip("Canvas/panel that holds tutorial UI")]
+    [SerializeField] GameObject tutorialPanel;
+    [Tooltip("Delay after smashing the tutorial button before camera tweens")]
+    [SerializeField] float tutorialDelay = 0.8f;
+    [Tooltip("How fast tutorial 3D previews rotate")]
+    [SerializeField] float tutorialSpinSpeed = 25f;
+    [SerializeField] TutorialUI tutorialUI;
 
     [Header("Visuals (Optional)")]
     [SerializeField] LineRenderer aimLine;
@@ -133,6 +146,11 @@ public class MainMenuSmashController : MonoBehaviour
             skinsPanel.SetActive(false);
         if (biomePanel != null)
             biomePanel.SetActive(false);
+        if (tutorialPanel != null)
+            tutorialPanel.SetActive(false);
+
+        if (tutorialUI == null && tutorialPanel != null)
+            tutorialUI = tutorialPanel.GetComponent<TutorialUI>();
 
         if (skinPreview == null)
             skinPreview = FindAnyObjectByType<PlayerSkinApplier>();
@@ -173,6 +191,8 @@ public class MainMenuSmashController : MonoBehaviour
             UpdateSkins();
         else if (state == MenuState.BiomeSelection)
             UpdateBiomeSelection();
+        else if (state == MenuState.Tutorial)
+            UpdateTutorial();
     }
 
     void FixedUpdate()
@@ -766,6 +786,13 @@ public class MainMenuSmashController : MonoBehaviour
             yield break;
         }
 
+        // tutorial has its own independent delay
+        if (selectedTarget.OptionType == MenuOption.Tutorial)
+        {
+            StartCoroutine(TransitionToTutorial());
+            yield break;
+        }
+
         // start goes to biome selection if biomes are configured
         if (selectedTarget.OptionType == MenuOption.Start && biomes.Count > 0 && biomePanel != null)
         {
@@ -793,6 +820,10 @@ public class MainMenuSmashController : MonoBehaviour
                 StartCoroutine(TransitionToSkins());
                 break;
 
+            case MenuOption.Tutorial:
+                StartCoroutine(TransitionToTutorial());
+                break;
+
             case MenuOption.Quit:
 #if UNITY_EDITOR
                 EditorApplication.isPlaying = false;
@@ -801,6 +832,102 @@ public class MainMenuSmashController : MonoBehaviour
 #endif
                 break;
         }
+    }
+
+    // -- tutorial --
+
+    IEnumerator TransitionToTutorial()
+    {
+        yield return new WaitForSeconds(tutorialDelay);
+        ResetMenuShatters();
+
+        state = MenuState.Tutorial;
+
+        // freeze the ball
+        if (playerRb != null)
+        {
+            playerRb.useGravity = false;
+            playerRb.linearVelocity = Vector3.zero;
+            playerRb.angularVelocity = Vector3.zero;
+        }
+
+        // tween camera to tutorial view
+        if (tutorialCameraPoint != null && menuCamera != null)
+        {
+            tweenFromPos = menuCamera.transform.position;
+            tweenFromRot = menuCamera.transform.rotation;
+            tweenToPos = tutorialCameraPoint.position;
+            tweenToRot = tutorialCameraPoint.rotation;
+            tweenProgress = 0f;
+        }
+
+        if (tutorialPanel != null)
+            tutorialPanel.SetActive(true);
+
+        if (tutorialUI != null)
+            tutorialUI.Enter(tutorialDisplayPoint, tutorialSpinSpeed);
+
+        Cursor.lockState = CursorLockMode.None;
+        Cursor.visible = true;
+    }
+
+    void UpdateTutorial()
+    {
+        if (tutorialUI != null)
+            tutorialUI.UpdateSpin();
+
+        // left/right to cycle items
+        if (Input.GetKeyDown(KeyCode.LeftArrow) || Input.GetKeyDown(KeyCode.A))
+        {
+            if (tutorialUI != null) tutorialUI.PreviousItem();
+        }
+        if (Input.GetKeyDown(KeyCode.RightArrow) || Input.GetKeyDown(KeyCode.D))
+        {
+            if (tutorialUI != null) tutorialUI.NextItem();
+        }
+
+        if (Input.GetKeyDown(KeyCode.Escape) || Input.GetKeyDown(KeyCode.Backspace))
+            ExitTutorial();
+    }
+
+    void ExitTutorial()
+    {
+        state = MenuState.Aiming;
+        ResetMenuShatters();
+
+        if (tutorialUI != null)
+            tutorialUI.Exit();
+
+        if (tutorialPanel != null)
+            tutorialPanel.SetActive(false);
+
+        // reset ball to original position
+        if (player != null && playerRb != null)
+            TeleportPlayer(playerStartPos, playerStartRot);
+
+        // recompute camera for the current target
+        if (menuCamera != null && targets.Count > 0)
+        {
+            ComputeCameraForTarget(targets[currentIndex], out Vector3 returnPos, out Quaternion returnRot);
+            tweenFromPos = menuCamera.transform.position;
+            tweenFromRot = menuCamera.transform.rotation;
+            tweenToPos = returnPos;
+            tweenToRot = returnRot;
+            tweenProgress = 0f;
+        }
+
+        HighlightTarget(currentIndex);
+        if (screenCrosshair != null) screenCrosshair.gameObject.SetActive(true);
+
+        Cursor.lockState = CursorLockMode.Locked;
+        Cursor.visible = false;
+    }
+
+    // called by tutorial panel back button
+    public void OnTutorialBack()
+    {
+        if (state == MenuState.Tutorial)
+            ExitTutorial();
     }
 
     // -- biome selection --

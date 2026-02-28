@@ -1,1 +1,1 @@
-public enum MenuOption { Start, Settings, Quit, Skins }
+public enum MenuOption { Start, Settings, Quit, Skins, Tutorial }

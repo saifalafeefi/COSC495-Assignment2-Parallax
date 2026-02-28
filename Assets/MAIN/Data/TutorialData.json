@@ -1,0 +1,84 @@
+{
+  "categories": [
+    {
+      "categoryName": "Enemies",
+      "entries": [
+        {
+          "title": "Normal Enemy",
+          "description": "Your basic enemy. Rolls straight toward your goal with no tricks. Easy to knock around, but dangerous in numbers.",
+          "stats": "Speed: 10\nMass: 1"
+        },
+        {
+          "title": "Aggressive Enemy",
+          "description": "Charges toward your goal like a normal enemy, but if you get too close it'll ram you. Keep your distance or hit it from the side.",
+          "stats": "Speed: 10\nMass: 1\nRam Force: 20\nDetect Radius: 8"
+        },
+        {
+          "title": "Evasive Enemy",
+          "description": "Zigzags sideways while advancing toward your goal, making it harder to line up a clean hit. Time your boost to catch it mid-dodge.",
+          "stats": "Speed: 10\nMass: 1\nDodge Interval: 3s"
+        },
+        {
+          "title": "Tank Enemy",
+          "description": "Twice the size, twice the mass, half the speed. Slow but extremely hard to push. You'll need a powerup or a running start to move this thing.",
+          "stats": "Speed: 5\nMass: 2\nScale: 2x"
+        }
+      ]
+    },
+    {
+      "categoryName": "Powerups",
+      "entries": [
+        {
+          "title": "Knockback",
+          "description": "Supercharges your bump force for a limited time. Enemies go flying on contact. Picking up another one extends the timer.",
+          "stats": "Duration: 5s\nStacking: extends timer"
+        },
+        {
+          "title": "Smash",
+          "description": "Launch into the air, aim at a target in slow-mo, then dive-bomb the ground for a massive AOE shockwave. Each pickup gives one charge (press F to use).",
+          "stats": "Charges: 1 per pickup\nAOE with distance falloff"
+        },
+        {
+          "title": "Shield",
+          "description": "Creates a protective sphere around you that destroys enemies on contact. Each shield absorbs 3 hits before breaking. Extra pickups add stacks.",
+          "stats": "Hits per stack: 3\nStacking: adds shield layers"
+        },
+        {
+          "title": "Giant",
+          "description": "Grow to twice your size and flatten enemies by rolling over them. Squished enemies count as scored. Shrinks back after the timer runs out.",
+          "stats": "Duration: 10s\nScale: 2x\nStacking: extends timer"
+        },
+        {
+          "title": "Haunt",
+          "description": "For a limited time, any enemy you touch gets haunted, reverse their direction and aggressively roll toward their own goal. Haunted enemies spread the curse to others on contact.",
+          "stats": "Buff duration: 8s\nEnemy effect: 5s\nSpreads on contact"
+        }
+      ]
+    },
+    {
+      "categoryName": "Biomes",
+      "entries": [
+        {
+          "title": "Grasslands",
+          "description": "Rolling green hills with wide open space. The classic arena, just you, the enemies, and the beautiful green grass.",
+          "stats": ""
+        },
+        {
+          "title": "Desert",
+          "description": "Sun-scorched sand dunes and rocky terrain. Watch your footing (high friction).",
+          "stats": ""
+        },
+        {
+          "title": "Snow",
+          "description": "Frozen tundra with icy patches. The cold never bothered the enemies, but it might bother you (low friction).",
+          "stats": ""
+        },
+        {
+          "title": "Space",
+          "description": "Zero-gravity arena, where you and the enemies float freely. Momentum is everything here.",
+          "stats": ""
+        }
+      ]
+    }
+  ]
+}
