@@ -6,22 +6,22 @@
         {
           "title": "Normal Enemy",
           "description": "Your basic enemy. Rolls straight toward your goal with no tricks. Easy to knock around, but dangerous in numbers.",
-          "stats": "Speed: 10\nMass: 1"
+          "stats": "Speed: 5\nMass: 1"
         },
         {
           "title": "Aggressive Enemy",
           "description": "Charges toward your goal like a normal enemy, but if you get too close it'll ram you. Keep your distance or hit it from the side.",
-          "stats": "Speed: 10\nMass: 1\nRam Force: 20\nDetect Radius: 8"
+          "stats": "Speed: 5\nMass: 2\nRam Force: 25\nDetect Radius: 30"
         },
         {
           "title": "Evasive Enemy",
           "description": "Zigzags sideways while advancing toward your goal, making it harder to line up a clean hit. Time your boost to catch it mid-dodge.",
-          "stats": "Speed: 10\nMass: 1\nDodge Interval: 3s"
+          "stats": "Speed: 2.5\nMass: 1\nDodge Interval: 3s"
         },
         {
           "title": "Tank Enemy",
-          "description": "Twice the size, twice the mass, half the speed. Slow but extremely hard to push. You'll need a powerup or a running start to move this thing.",
-          "stats": "Speed: 5\nMass: 2\nScale: 2x"
+          "description": "Twice the size, triple the mass, half the speed. Slow but extremely hard to push. You'll need a powerup or a running start to move this thing.",
+          "stats": "Speed: 3.5\nMass: 3\nScale: 2x"
         }
       ]
     },
@@ -51,7 +51,7 @@
         {
           "title": "Haunt",
           "description": "For a limited time, any enemy you touch gets haunted, reverse their direction and aggressively roll toward their own goal. Haunted enemies spread the curse to others on contact.",
-          "stats": "Buff duration: 8s\nEnemy effect: 5s\nSpreads on contact"
+          "stats": "Buff duration: 8s\nEnemy effect: 5s\nStacking: extends timer\nSpreads on contact"
         }
       ]
     },

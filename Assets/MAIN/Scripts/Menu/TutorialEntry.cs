@@ -3,7 +3,7 @@ using UnityEngine;
 [System.Serializable]
 public class TutorialEntry
 {
-    // text loaded from JSON — no need to type these in Inspector
+    // text loaded from JSON, no need to type in Inspector
     [HideInInspector] public string title;
     [HideInInspector] public string description;
     [HideInInspector] public string stats;

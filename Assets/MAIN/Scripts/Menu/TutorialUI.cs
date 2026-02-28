@@ -5,7 +5,7 @@ using TMPro;
 public class TutorialUI : MonoBehaviour
 {
     [Header("Data")]
-    [Tooltip("JSON file with tutorial text (title/description/stats). Must match category/entry order")]
+    [Tooltip("JSON file with tutorial text (title/description/stats), must match category/entry order")]
     [SerializeField] TextAsset tutorialDataFile;
     [SerializeField] TutorialCategory[] categories;
 
@@ -140,13 +140,13 @@ public class TutorialUI : MonoBehaviour
         HighlightCategoryButton(currentCategory);
     }
 
-    // load title/description/stats from JSON into the Inspector-wired categories
+    // load text from JSON into the Inspector-wired categories
     void LoadTextFromJson()
     {
         textLoaded = true;
         if (tutorialDataFile == null)
         {
-            Debug.LogWarning("[TutorialUI] No tutorial data JSON assigned — text fields will be empty");
+            Debug.LogWarning("[TutorialUI] no tutorial data JSON assigned, text fields will be empty");
             return;
         }
 
@@ -173,15 +173,14 @@ public class TutorialUI : MonoBehaviour
         }
     }
 
-    // strip all gameplay components so prefabs are visual-only
+    // strip gameplay components, keep visual-only scripts
     void DisableGameplay(GameObject obj)
     {
-        // destroy all MonoBehaviours to prevent side effects (aliveCount, PowerupTracker, etc.)
         var behaviours = obj.GetComponentsInChildren<MonoBehaviour>(true);
         for (int i = behaviours.Length - 1; i >= 0; i--)
         {
-            // keep particle systems' MonoBehaviours alone — they're visual
             if (behaviours[i] is ParticleSystem) continue;
+            if (behaviours[i] is PowerupGlow) continue;
             Destroy(behaviours[i]);
         }
 

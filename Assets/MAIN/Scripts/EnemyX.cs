@@ -64,10 +64,13 @@ public class EnemyX : MonoBehaviour
         }
     }
 
+    bool startedTracking;
+
     void Start()
     {
         enemyRb = GetComponent<Rigidbody>();
         aliveCount++;
+        startedTracking = true;
 
         // use cached static refs so only the first enemy pays the Find() cost
         if (cachedPlayerGoal == null)
@@ -201,7 +204,8 @@ public class EnemyX : MonoBehaviour
 
     void OnDestroy()
     {
-        aliveCount--;
+        // only decrement if Start() actually ran (prevents going negative from tutorial previews)
+        if (startedTracking) aliveCount--;
         if (hauntVfxInstance != null) Destroy(hauntVfxInstance);
     }
 
