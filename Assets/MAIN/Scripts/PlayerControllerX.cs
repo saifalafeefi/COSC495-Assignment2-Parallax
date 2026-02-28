@@ -211,6 +211,9 @@ public class PlayerControllerX : MonoBehaviour
             airbornePeakY = transform.position.y;
         }
 
+        // skip gameplay input/logic while paused
+        if (Time.timeScale == 0f) return;
+
         // tick duration-based powerup timers
         if (knockbackTimer > 0f)
         {
