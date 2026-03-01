@@ -10,6 +10,7 @@ TagManager:
   - ShieldPowerup
   - GiantPowerup
   - HauntPowerup
+  - RushPowerup
   layers:
   - Default
   - TransparentFX

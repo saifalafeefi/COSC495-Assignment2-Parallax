@@ -7,12 +7,14 @@ Shader "Custom/PowerupOverlay"
         _Color3 ("Shield Color", Color) = (0, 0.77, 1, 1)
         _Color4 ("Giant Color", Color) = (0.11, 0.53, 0.22, 1)
         _Color5 ("Haunt Color", Color) = (0.86, 0, 1, 1)
+        _Color6 ("Rush Color", Color) = (1, 0.35, 0, 1)
 
         _Weight1 ("Knockback Weight", Range(0,1)) = 0
         _Weight2 ("Smash Weight", Range(0,1)) = 0
         _Weight3 ("Shield Weight", Range(0,1)) = 0
         _Weight4 ("Giant Weight", Range(0,1)) = 0
         _Weight5 ("Haunt Weight", Range(0,1)) = 0
+        _Weight6 ("Rush Weight", Range(0,1)) = 0
 
         _NoiseScale ("Noise Scale", Float) = 2.0
         _FlowSpeed ("Flow Speed", Float) = 0.8
@@ -44,8 +46,8 @@ Shader "Custom/PowerupOverlay"
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
 
             CBUFFER_START(UnityPerMaterial)
-                half4 _Color1, _Color2, _Color3, _Color4, _Color5;
-                half _Weight1, _Weight2, _Weight3, _Weight4, _Weight5;
+                half4 _Color1, _Color2, _Color3, _Color4, _Color5, _Color6;
+                half _Weight1, _Weight2, _Weight3, _Weight4, _Weight5, _Weight6;
                 float _NoiseScale;
                 float _FlowSpeed;
             CBUFFER_END
@@ -102,7 +104,7 @@ Shader "Custom/PowerupOverlay"
 
             half4 frag(Varyings input) : SV_Target
             {
-                half totalWeight = _Weight1 + _Weight2 + _Weight3 + _Weight4 + _Weight5;
+                half totalWeight = _Weight1 + _Weight2 + _Weight3 + _Weight4 + _Weight5 + _Weight6;
 
                 // no active powerups = output white = multiply does nothing
                 if (totalWeight < 0.001)
@@ -117,6 +119,7 @@ Shader "Custom/PowerupOverlay"
                 float n3 = GradientNoise3D(samplePos + float3(t * 0.4,  t * -0.8, t * 1.2))  * 0.5 + 0.5;
                 float n4 = GradientNoise3D(samplePos + float3(t * -1.0, t * 0.5,  t * 0.7))  * 0.5 + 0.5;
                 float n5 = GradientNoise3D(samplePos + float3(t * 0.6,  t * -0.4, t * -1.1)) * 0.5 + 0.5;
+                float n6 = GradientNoise3D(samplePos + float3(t * -0.2, t * 1.4,  t * -0.9)) * 0.5 + 0.5;
 
                 // color alpha controls intensity — lower alpha = weaker tint
                 half w1 = n1 * _Weight1 * _Color1.a;
@@ -124,8 +127,9 @@ Shader "Custom/PowerupOverlay"
                 half w3 = n3 * _Weight3 * _Color3.a;
                 half w4 = n4 * _Weight4 * _Color4.a;
                 half w5 = n5 * _Weight5 * _Color5.a;
+                half w6 = n6 * _Weight6 * _Color6.a;
 
-                half sumW = w1 + w2 + w3 + w4 + w5;
+                half sumW = w1 + w2 + w3 + w4 + w5 + w6;
 
                 half3 tintColor = half3(1, 1, 1);
                 if (sumW > 0.001)
@@ -135,12 +139,13 @@ Shader "Custom/PowerupOverlay"
                               + _Color2.rgb * (w2 * invSum)
                               + _Color3.rgb * (w3 * invSum)
                               + _Color4.rgb * (w4 * invSum)
-                              + _Color5.rgb * (w5 * invSum);
+                              + _Color5.rgb * (w5 * invSum)
+                              + _Color6.rgb * (w6 * invSum);
 
                     // blend toward white using alpha-scaled weight so opacity actually controls intensity
                     half maxAlpha = max(max(max(_Color1.a * _Weight1, _Color2.a * _Weight2),
                                             max(_Color3.a * _Weight3, _Color4.a * _Weight4)),
-                                        _Color5.a * _Weight5);
+                                        max(_Color5.a * _Weight5, _Color6.a * _Weight6));
                     tintColor = lerp(half3(1,1,1), tintColor, saturate(maxAlpha));
                 }
 

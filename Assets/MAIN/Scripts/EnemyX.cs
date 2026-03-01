@@ -10,6 +10,7 @@ public class EnemyX : MonoBehaviour
 
     // static enemy count — lets SpawnManagerX check without FindGameObjectsWithTag every frame
     public static int aliveCount;
+    private static float globalSpeedMultiplier = 1f;
 
     // cached goal references — found once, reused by all enemies
     private static GameObject cachedPlayerGoal;
@@ -109,7 +110,7 @@ public class EnemyX : MonoBehaviour
             else if (cachedEnemyGoal != null)
             {
                 Vector3 toGoal = (cachedEnemyGoal.transform.position - transform.position).normalized;
-                enemyRb.AddForce(toGoal * hauntMoveSpeed, ForceMode.Force);
+                enemyRb.AddForce(toGoal * hauntMoveSpeed * globalSpeedMultiplier, ForceMode.Force);
             }
             return;
         }
@@ -126,7 +127,7 @@ public class EnemyX : MonoBehaviour
             else if (cachedEnemyGoal != null)
             {
                 Vector3 retreatDirection = (cachedEnemyGoal.transform.position - transform.position).normalized;
-                enemyRb.AddForce(retreatDirection * stunSpeed * Time.deltaTime);
+                enemyRb.AddForce(retreatDirection * stunSpeed * globalSpeedMultiplier * Time.deltaTime);
             }
             return;
         }
@@ -151,7 +152,7 @@ public class EnemyX : MonoBehaviour
         Vector3 toGoal = playerGoal.transform.position - transform.position;
         toGoal.y = 0f;
         Vector3 goalDirection = toGoal.normalized;
-        enemyRb.AddForce(goalDirection * speed * GetPostStunForceScale(), ForceMode.Force);
+        enemyRb.AddForce(goalDirection * GetEffectiveSpeed(speed) * GetPostStunForceScale(), ForceMode.Force);
         ClampSpeed();
     }
 
@@ -161,12 +162,30 @@ public class EnemyX : MonoBehaviour
         Vector3 vel = enemyRb.linearVelocity;
         Vector3 flatVel = new Vector3(vel.x, 0f, vel.z);
         float flatSpeed = flatVel.magnitude;
-        if (flatSpeed <= speed) return;
+        float speedCap = GetEffectiveSpeed(speed);
+        if (flatSpeed <= speedCap) return;
 
-        float excess = flatSpeed - speed;
+        float excess = flatSpeed - speedCap;
         Vector3 brakeDir = -flatVel.normalized;
         enemyRb.AddForce(brakeDir * excess * overspeedBrake, ForceMode.Acceleration);
     }
+
+    protected float GetEffectiveSpeed(float baseSpeed)
+    {
+        return baseSpeed * globalSpeedMultiplier;
+    }
+
+    protected float GetGlobalSpeedMultiplier()
+    {
+        return globalSpeedMultiplier;
+    }
+
+    public static void SetGlobalSpeedMultiplier(float multiplier)
+    {
+        globalSpeedMultiplier = Mathf.Max(0f, multiplier);
+    }
+
+    public static float GlobalSpeedMultiplier => globalSpeedMultiplier;
 
     // trigger-based goal scoring (goals use isTrigger colliders)
     private void OnTriggerEnter(Collider other)
@@ -214,6 +233,7 @@ public class EnemyX : MonoBehaviour
     static void ResetStatics()
     {
         aliveCount = 0;
+        globalSpeedMultiplier = 1f;
         cachedPlayerGoal = null;
         cachedEnemyGoal = null;
         cachedPlayerTransform = null;

@@ -40,11 +40,11 @@ public class EvasiveEnemyX : EnemyX
         {
             dodgeActiveTimer -= Time.deltaTime;
             Vector3 dodgeDir = (goalDirection + sideways * dodgeDirection * dodgeAngle).normalized;
-            enemyRb.AddForce(dodgeDir * speed * dodgeStrength * forceScale, ForceMode.Force);
+            enemyRb.AddForce(dodgeDir * speed * dodgeStrength * forceScale * GetGlobalSpeedMultiplier(), ForceMode.Force);
         }
         else
         {
-            enemyRb.AddForce(goalDirection * speed * forceScale, ForceMode.Force);
+            enemyRb.AddForce(goalDirection * GetEffectiveSpeed(speed) * forceScale, ForceMode.Force);
         }
         ClampSpeed();
     }

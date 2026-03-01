@@ -87,6 +87,14 @@ public class PlayerControllerX : MonoBehaviour
     private GameObject hauntIndicator;
     private GameObject hauntEnemyVfxPrefab; // particle effect to spawn on haunted enemies
 
+    // rush powerup — speed up player while globally slowing enemies
+    private float rushTimer;
+    [SerializeField] private float rushDuration = 8f;
+    [SerializeField] private float rushSpeedMultiplier = 1.6f;
+    [SerializeField] private float rushMaxSpeedMultiplier = 1.35f;
+    [SerializeField] private float rushEnemySpeedMultiplier = 0.5f;
+    private GameObject rushIndicator;
+
     // stacking visuals — charge/hit-based powerups still clone indicators per stack
     // X/Z = scale growth per stack, Y = vertical position offset per stack
     public Vector3 stackSpacing = new Vector3(0.3f, 0.15f, 0.3f);
@@ -175,6 +183,9 @@ public class PlayerControllerX : MonoBehaviour
         aimLine.endColor = Color.red;
         aimLine.positionCount = 2;
         aimLine.enabled = false;
+
+        // safety on scene start
+        EnemyX.SetGlobalSpeedMultiplier(1f);
     }
 
     void FixedUpdate()
@@ -232,6 +243,17 @@ public class PlayerControllerX : MonoBehaviour
             {
                 hauntTimer = 0f;
                 if (hauntIndicator != null) hauntIndicator.SetActive(false);
+            }
+        }
+
+        if (rushTimer > 0f)
+        {
+            rushTimer -= Time.deltaTime;
+            if (rushTimer <= 0f)
+            {
+                rushTimer = 0f;
+                EnemyX.SetGlobalSpeedMultiplier(1f);
+                if (rushIndicator != null) rushIndicator.SetActive(false);
             }
         }
 
@@ -305,8 +327,9 @@ public class PlayerControllerX : MonoBehaviour
 
             // scale force down as you approach max speed, so acceleration feels gradual
             float currentSpeed = flatVelocity.magnitude;
-            float speedFactor = Mathf.Clamp01(1f - currentSpeed / maxSpeed);
-            playerRb.AddForce(moveDirection * speed * speedFactor, ForceMode.Force);
+            float currentMaxSpeed = maxSpeed * GetCurrentMaxSpeedMultiplier();
+            float speedFactor = Mathf.Clamp01(1f - currentSpeed / currentMaxSpeed);
+            playerRb.AddForce(moveDirection * speed * GetCurrentSpeedMultiplier() * speedFactor, ForceMode.Force);
 
             // jump on space while grounded
             if (Input.GetKeyDown(KeyCode.Space) && isGrounded)
@@ -359,6 +382,7 @@ public class PlayerControllerX : MonoBehaviour
         UpdateIndicatorPosition(smashPowerupIndicator, smashIndicators, smashStackMultiplier, indicatorPos);
         if (giantPowerupIndicator != null) giantPowerupIndicator.transform.position = indicatorPos;
         if (hauntIndicator != null) hauntIndicator.transform.position = indicatorPos;
+        if (rushIndicator != null) rushIndicator.transform.position = indicatorPos;
 
         // shield is special: centered on player, scales to radius
         if (shieldIndicator != null)
@@ -486,6 +510,14 @@ public class PlayerControllerX : MonoBehaviour
             return;
         }
 
+        if (other.TryGetComponent(out RushPowerupPickup rushPickup))
+        {
+            if (SFXManager.Instance != null) SFXManager.Instance.PlayPowerupPickup();
+            ApplyRushPickup(rushPickup);
+            Destroy(other.gameObject);
+            return;
+        }
+
         // fallback while transitioning old prefabs: still support tag-only pickups
         if (other.gameObject.CompareTag("KnockbackPowerup"))
         {
@@ -510,6 +542,11 @@ public class PlayerControllerX : MonoBehaviour
         else if (other.gameObject.CompareTag("HauntPowerup"))
         {
             ApplyHauntPickup(null);
+            Destroy(other.gameObject);
+        }
+        else if (other.gameObject.CompareTag("RushPowerup"))
+        {
+            ApplyRushPickup(null);
             Destroy(other.gameObject);
         }
     }
@@ -639,6 +676,34 @@ public class PlayerControllerX : MonoBehaviour
         // extend remaining time by full duration
         hauntTimer += hauntDuration;
         if (hauntIndicator != null) hauntIndicator.SetActive(true);
+    }
+
+    void ApplyRushPickup(RushPowerupPickup pickup)
+    {
+        Vector3 unusedScale = Vector3.zero;
+        if (pickup != null)
+        {
+            rushDuration = pickup.rushDuration;
+            rushSpeedMultiplier = pickup.playerSpeedMultiplier;
+            rushMaxSpeedMultiplier = pickup.playerMaxSpeedMultiplier;
+            rushEnemySpeedMultiplier = pickup.enemySpeedMultiplier;
+            EnsureIndicatorInstance(pickup.indicatorPrefab, ref rushIndicator, ref unusedScale);
+        }
+
+        // extend remaining time by full duration
+        rushTimer += rushDuration;
+        EnemyX.SetGlobalSpeedMultiplier(rushEnemySpeedMultiplier);
+        if (rushIndicator != null) rushIndicator.SetActive(true);
+    }
+
+    float GetCurrentSpeedMultiplier()
+    {
+        return rushTimer > 0f ? rushSpeedMultiplier : 1f;
+    }
+
+    float GetCurrentMaxSpeedMultiplier()
+    {
+        return rushTimer > 0f ? rushMaxSpeedMultiplier : 1f;
     }
 
     // spawn an extra indicator clone for stacks beyond the first (bigger each time)
@@ -1177,6 +1242,10 @@ public class PlayerControllerX : MonoBehaviour
         {
             cameraRotator.RestorePitchClamp();
         }
+
+        // reset global slowdown when player is disabled (scene unload / respawn safety)
+        if (rushTimer > 0f)
+            EnemyX.SetGlobalSpeedMultiplier(1f);
     }
 
     // bump enemies away on contact
@@ -1275,11 +1344,13 @@ public class PlayerControllerX : MonoBehaviour
     public bool IsShieldActive => shieldStacks > 0;
     public bool IsGiantActive => isGiant;
     public bool IsHauntActive => hauntTimer > 0f;
+    public bool IsRushActive => rushTimer > 0f;
 
     // remaining seconds on each duration-based powerup (for timer UI)
     public float KnockbackTimer => knockbackTimer;
     public float GiantTimer => giantTimer + (isShrinkingBack ? (giantShrinkBackDuration - shrinkBackElapsed) : 0f);
     public float HauntTimer => hauntTimer;
+    public float RushTimer => rushTimer;
     public int SmashStacks => smashPowerupStacks;
     public int ShieldStacks => shieldStacks;
     public int ShieldHitsRemaining => shieldHitsRemaining;
@@ -1292,5 +1363,5 @@ public class PlayerControllerX : MonoBehaviour
     public bool IsSmashing => isAiming || isDiving;
 
     // 0–1 ratio of current speed to max speed
-    public float SpeedRatio => playerRb != null ? Mathf.Clamp01(playerRb.linearVelocity.magnitude / maxSpeed) : 0f;
+    public float SpeedRatio => playerRb != null ? Mathf.Clamp01(playerRb.linearVelocity.magnitude / (maxSpeed * GetCurrentMaxSpeedMultiplier())) : 0f;
 }

@@ -35,13 +35,13 @@ public class AggressiveEnemyX : EnemyX
             isHoming = true;
             Vector3 toPlayer = cachedPlayerTransform.position - transform.position;
             toPlayer.y = 0f;
-            enemyRb.AddForce(toPlayer.normalized * aggroHomingForce * forceScale, ForceMode.Force);
+            enemyRb.AddForce(toPlayer.normalized * aggroHomingForce * forceScale * GetGlobalSpeedMultiplier(), ForceMode.Force);
         }
         else
         {
             isHoming = false;
             // head toward goal normally
-            enemyRb.AddForce(goalDirection * aggroAcceleration * forceScale, ForceMode.Force);
+            enemyRb.AddForce(goalDirection * aggroAcceleration * forceScale * GetGlobalSpeedMultiplier(), ForceMode.Force);
         }
 
         // use aggro speed cap when homing, normal speed otherwise

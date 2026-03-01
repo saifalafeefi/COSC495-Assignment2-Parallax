@@ -837,6 +837,82 @@ Rigidbody:
   m_CorrespondingSourceObject: {fileID: 4005209303313156299, guid: 74189d3b1b090444fb3fca33a5ea1062, type: 3}
   m_PrefabInstance: {fileID: 7307224665425030074}
   m_PrefabAsset: {fileID: 0}
+--- !u!114 &583048344
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 583048338}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 87483b6bdf8596543aecc05463707dfa, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PlayerRushOverlayController
+  player: {fileID: 0}
+  targetRenderers: []
+  autoFindRenderers: 1
+  includeChildren: 1
+  overlayShader: {fileID: 0}
+  enterDuration: 0.25
+  exitDuration: 0.35
+  enterCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    - serializedVersion: 3
+      time: 1
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  exitCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    - serializedVersion: 3
+      time: 1
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  baseHueCycleSpeed: 0.22
+  chaosFrequency: 2.6
+  chaosAmplitude: 0.2
+  saturation: 0.95
+  value: 1
+  tintAlpha: 0.75
+  overlayNoiseScale: 2
+  overlayFlowSpeed: 0.8
+  rushWeightMax: 1
 --- !u!43 &671167444
 Mesh:
   m_ObjectHideFlags: 0
@@ -2792,7 +2868,10 @@ PrefabInstance:
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 7938855902651581350, guid: 74189d3b1b090444fb3fca33a5ea1062, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 583048344}
   m_SourcePrefab: {fileID: 100100000, guid: 74189d3b1b090444fb3fca33a5ea1062, type: 3}
 --- !u!1001 &8192960178024880390
 PrefabInstance:

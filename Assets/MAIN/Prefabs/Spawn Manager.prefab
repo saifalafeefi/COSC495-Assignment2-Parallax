@@ -219,6 +219,13 @@ MonoBehaviour:
   shieldPowerupPrefab: {fileID: 399236642687032647, guid: 828dcac96820d7d48adc432278bec3df, type: 3}
   giantPowerupPrefab: {fileID: 3371235027557621906, guid: 481c4510af2ce9f4eaee9e51380cbf93, type: 3}
   hauntPowerupPrefab: {fileID: 6786063765021139117, guid: d866e7fdf1fe5ba438b45fd2f3acd905, type: 3}
+  rushPowerupPrefab: {fileID: 6564541814340380393, guid: a9ed905ae6bcdfd498b81e6b1116e85b, type: 3}
+  knockbackChance: 0.2
+  smashChance: 0.2
+  shieldChance: 0.2
+  giantChance: 0.2
+  hauntChance: 0.2
+  rushChance: 0.2
   spawnRangeX: 10
   spawnZMin: 15
   spawnZMax: 25

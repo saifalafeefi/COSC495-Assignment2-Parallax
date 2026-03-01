@@ -3,7 +3,7 @@ using TMPro;
 using UnityEngine.UI;
 
 // displays status bars for powerups
-// duration-based: knockback, giant, haunt
+// duration-based: knockback, giant, haunt, rush
 // condition-based: smash (charges), shield (hits/stacks)
 // attach to a UI panel — rows are created dynamically, no manual child setup needed
 public class PowerupTimerUI : MonoBehaviour
@@ -30,6 +30,7 @@ public class PowerupTimerUI : MonoBehaviour
     private static readonly Color shieldColor = new Color(0.25f, 1f, 1f);        // cyan
     private static readonly Color giantColor = new Color(0.2f, 1f, 0.2f);       // green
     private static readonly Color hauntColor = new Color(0.7f, 0.2f, 1f);       // purple
+    private static readonly Color rushColor = new Color(1f, 0.55f, 0.15f);      // orange
     private static readonly Color barBackgroundColor = new Color(0f, 0f, 0f, 0.45f);
 
     private class PowerupRow
@@ -46,12 +47,14 @@ public class PowerupTimerUI : MonoBehaviour
     private PowerupRow shieldRow;
     private PowerupRow giantRow;
     private PowerupRow hauntRow;
+    private PowerupRow rushRow;
 
     private float knockbackDisplayMax;
     private float smashDisplayMaxStacks;
     private float shieldDisplayMaxUnits;
     private float giantDisplayMax;
     private float hauntDisplayMax;
+    private float rushDisplayMax;
 
     void Start()
     {
@@ -63,6 +66,7 @@ public class PowerupTimerUI : MonoBehaviour
         shieldRow = CreateRow("Shield", shieldColor);
         giantRow = CreateRow("Giant", giantColor);
         hauntRow = CreateRow("Haunt", hauntColor);
+        rushRow = CreateRow("Rush", rushColor);
     }
 
     void Update()
@@ -74,6 +78,7 @@ public class PowerupTimerUI : MonoBehaviour
         UpdateShieldRow();
         UpdateTimedRow(giantRow, playerController.GiantTimer, ref giantDisplayMax);
         UpdateTimedRow(hauntRow, playerController.HauntTimer, ref hauntDisplayMax);
+        UpdateTimedRow(rushRow, playerController.RushTimer, ref rushDisplayMax);
         ReflowRows();
     }
 
@@ -183,7 +188,7 @@ public class PowerupTimerUI : MonoBehaviour
 
     void ReflowRows()
     {
-        PowerupRow[] rows = { knockbackRow, smashRow, shieldRow, giantRow, hauntRow };
+        PowerupRow[] rows = { knockbackRow, smashRow, shieldRow, giantRow, hauntRow, rushRow };
         int visibleIndex = 0;
         for (int i = 0; i < rows.Length; i++)
         {

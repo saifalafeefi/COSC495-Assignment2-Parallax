@@ -25,6 +25,7 @@ public class SpawnManagerX : MonoBehaviour
     [SerializeField] private GameObject shieldPowerupPrefab;
     [SerializeField] private GameObject giantPowerupPrefab;
     [SerializeField] private GameObject hauntPowerupPrefab;
+    [SerializeField] private GameObject rushPowerupPrefab;
 
     [Header("Powerup Spawn Chances")]
     [SerializeField, Range(0f, 1f)] private float knockbackChance = 0.2f;
@@ -32,6 +33,7 @@ public class SpawnManagerX : MonoBehaviour
     [SerializeField, Range(0f, 1f)] private float shieldChance = 0.2f;
     [SerializeField, Range(0f, 1f)] private float giantChance = 0.2f;
     [SerializeField, Range(0f, 1f)] private float hauntChance = 0.2f;
+    [SerializeField, Range(0f, 1f)] private float rushChance = 0.2f;
 
     // spawn area tuning — exposed so designers can tweak in Inspector
     [Header("Spawn Area")]
@@ -202,8 +204,9 @@ public class SpawnManagerX : MonoBehaviour
         float wShield = shieldPowerupPrefab != null ? shieldChance : 0f;
         float wGiant = giantPowerupPrefab != null ? giantChance : 0f;
         float wHaunt = hauntPowerupPrefab != null ? hauntChance : 0f;
+        float wRush = rushPowerupPrefab != null ? rushChance : 0f;
 
-        float total = wKnockback + wSmash + wShield + wGiant + wHaunt;
+        float total = wKnockback + wSmash + wShield + wGiant + wHaunt + wRush;
         if (total <= 0f) return null;
 
         float roll = Random.Range(0f, total);
@@ -215,7 +218,9 @@ public class SpawnManagerX : MonoBehaviour
         if (roll < wShield) return shieldPowerupPrefab;
         roll -= wShield;
         if (roll < wGiant) return giantPowerupPrefab;
-        return hauntPowerupPrefab;
+        roll -= wGiant;
+        if (roll < wHaunt) return hauntPowerupPrefab;
+        return rushPowerupPrefab;
     }
 
     // spawn a random powerup if under the cap
