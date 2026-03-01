@@ -87,13 +87,16 @@ public class PlayerControllerX : MonoBehaviour
     private GameObject hauntIndicator;
     private GameObject hauntEnemyVfxPrefab; // particle effect to spawn on haunted enemies
 
-    // rush powerup — speed up player while globally slowing enemies
+    // rush ability — passively charges, press Q to activate
     private float rushTimer;
-    [SerializeField] private float rushDuration = 8f;
+    private float rushCharge;
+    [SerializeField] private KeyCode rushActivationKey = KeyCode.Q;
+    [SerializeField] private float rushChargeTimeToReady = 20f; // seconds to fully charge from 0 to ready
+    [SerializeField] private float rushDuration = 8f;           // active duration once triggered
     [SerializeField] private float rushSpeedMultiplier = 1.6f;
     [SerializeField] private float rushMaxSpeedMultiplier = 1.35f;
     [SerializeField] private float rushEnemySpeedMultiplier = 0.5f;
-    private GameObject rushIndicator;
+    private bool rushReadySfxPlayed;
 
     // stacking visuals — charge/hit-based powerups still clone indicators per stack
     // X/Z = scale growth per stack, Y = vertical position offset per stack
@@ -253,7 +256,20 @@ public class PlayerControllerX : MonoBehaviour
             {
                 rushTimer = 0f;
                 EnemyX.SetGlobalSpeedMultiplier(1f);
-                if (rushIndicator != null) rushIndicator.SetActive(false);
+                if (SFXManager.Instance != null) SFXManager.Instance.StopRushLoop();
+            }
+        }
+        else
+        {
+            // passive charge while rush is inactive
+            float chargePerSecond = rushChargeTimeToReady > 0.001f ? 1f / rushChargeTimeToReady : 1f;
+            rushCharge = Mathf.Clamp01(rushCharge + chargePerSecond * Time.deltaTime);
+
+            // one-shot ready SFX when charge first reaches full
+            if (rushCharge >= 1f && !rushReadySfxPlayed)
+            {
+                rushReadySfxPlayed = true;
+                if (SFXManager.Instance != null) SFXManager.Instance.PlayRushReady();
             }
         }
 
@@ -279,6 +295,12 @@ public class PlayerControllerX : MonoBehaviour
         else if (Input.GetKeyDown(KeyCode.F) && smashPowerupStacks > 0 && !isSmashing)
         {
             smashCoroutine = StartCoroutine(PerformSmashAttack());
+        }
+
+        // Q (default): activate rush when fully charged
+        if (Input.GetKeyDown(rushActivationKey) && CanActivateRush())
+        {
+            ActivateRush();
         }
 
         // update landing indicator + aim line during aiming (follows camera direction)
@@ -382,7 +404,6 @@ public class PlayerControllerX : MonoBehaviour
         UpdateIndicatorPosition(smashPowerupIndicator, smashIndicators, smashStackMultiplier, indicatorPos);
         if (giantPowerupIndicator != null) giantPowerupIndicator.transform.position = indicatorPos;
         if (hauntIndicator != null) hauntIndicator.transform.position = indicatorPos;
-        if (rushIndicator != null) rushIndicator.transform.position = indicatorPos;
 
         // shield is special: centered on player, scales to radius
         if (shieldIndicator != null)
@@ -510,14 +531,6 @@ public class PlayerControllerX : MonoBehaviour
             return;
         }
 
-        if (other.TryGetComponent(out RushPowerupPickup rushPickup))
-        {
-            if (SFXManager.Instance != null) SFXManager.Instance.PlayPowerupPickup();
-            ApplyRushPickup(rushPickup);
-            Destroy(other.gameObject);
-            return;
-        }
-
         // fallback while transitioning old prefabs: still support tag-only pickups
         if (other.gameObject.CompareTag("KnockbackPowerup"))
         {
@@ -542,11 +555,6 @@ public class PlayerControllerX : MonoBehaviour
         else if (other.gameObject.CompareTag("HauntPowerup"))
         {
             ApplyHauntPickup(null);
-            Destroy(other.gameObject);
-        }
-        else if (other.gameObject.CompareTag("RushPowerup"))
-        {
-            ApplyRushPickup(null);
             Destroy(other.gameObject);
         }
     }
@@ -678,22 +686,24 @@ public class PlayerControllerX : MonoBehaviour
         if (hauntIndicator != null) hauntIndicator.SetActive(true);
     }
 
-    void ApplyRushPickup(RushPowerupPickup pickup)
+    bool CanActivateRush()
     {
-        Vector3 unusedScale = Vector3.zero;
-        if (pickup != null)
-        {
-            rushDuration = pickup.rushDuration;
-            rushSpeedMultiplier = pickup.playerSpeedMultiplier;
-            rushMaxSpeedMultiplier = pickup.playerMaxSpeedMultiplier;
-            rushEnemySpeedMultiplier = pickup.enemySpeedMultiplier;
-            EnsureIndicatorInstance(pickup.indicatorPrefab, ref rushIndicator, ref unusedScale);
-        }
+        if (isSmashing) return false;
+        if (rushTimer > 0f) return false;
+        return rushCharge >= 1f;
+    }
 
-        // extend remaining time by full duration
-        rushTimer += rushDuration;
+    void ActivateRush()
+    {
+        rushCharge = 0f;
+        rushTimer = rushDuration;
+        rushReadySfxPlayed = false;
         EnemyX.SetGlobalSpeedMultiplier(rushEnemySpeedMultiplier);
-        if (rushIndicator != null) rushIndicator.SetActive(true);
+        if (SFXManager.Instance != null)
+        {
+            SFXManager.Instance.PlayRushActivate();
+            SFXManager.Instance.StartRushLoop();
+        }
     }
 
     float GetCurrentSpeedMultiplier()
@@ -1243,9 +1253,12 @@ public class PlayerControllerX : MonoBehaviour
             cameraRotator.RestorePitchClamp();
         }
 
-        // reset global slowdown when player is disabled (scene unload / respawn safety)
+        // reset global slowdown on disable (scene unload / respawn safety)
         if (rushTimer > 0f)
+        {
             EnemyX.SetGlobalSpeedMultiplier(1f);
+            if (SFXManager.Instance != null) SFXManager.Instance.StopRushLoop();
+        }
     }
 
     // bump enemies away on contact
@@ -1345,12 +1358,18 @@ public class PlayerControllerX : MonoBehaviour
     public bool IsGiantActive => isGiant;
     public bool IsHauntActive => hauntTimer > 0f;
     public bool IsRushActive => rushTimer > 0f;
+    public bool IsRushReady => rushTimer <= 0f && rushCharge >= 1f;
 
     // remaining seconds on each duration-based powerup (for timer UI)
     public float KnockbackTimer => knockbackTimer;
     public float GiantTimer => giantTimer + (isShrinkingBack ? (giantShrinkBackDuration - shrinkBackElapsed) : 0f);
     public float HauntTimer => hauntTimer;
     public float RushTimer => rushTimer;
+    public float RushDuration => rushDuration;
+    public float RushChargeTimeToReady => rushChargeTimeToReady;
+    public float RushChargeNormalized => IsRushActive
+        ? (rushDuration > 0.001f ? Mathf.Clamp01(rushTimer / rushDuration) : 0f)
+        : rushCharge;
     public int SmashStacks => smashPowerupStacks;
     public int ShieldStacks => shieldStacks;
     public int ShieldHitsRemaining => shieldHitsRemaining;

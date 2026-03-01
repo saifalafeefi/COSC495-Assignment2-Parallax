@@ -185,6 +185,12 @@ MonoBehaviour:
   smashSmokeMaxSpeed: 50
   smashSmokeSurfaceOffset: 0
   smashSmokeCornerSpreadBoost: 0.35
+  rushActivationKey: 113
+  rushChargeTimeToReady: 30
+  rushDuration: 10
+  rushSpeedMultiplier: 1.6
+  rushMaxSpeedMultiplier: 1.35
+  rushEnemySpeedMultiplier: 0.5
   stackSpacing: {x: 1, y: 0.15, z: 1}
   indicatorYOffset: -0.6
   landingIndicator: {fileID: 0}

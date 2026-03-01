@@ -11538,6 +11538,12 @@ MonoBehaviour:
   shieldBreakClip: {fileID: 8300000, guid: db75ce260d279194f9249e61d26ca188, type: 3}
   giantSquishClip: {fileID: 8300000, guid: 24626bc9b2347964381eb4127eac4384, type: 3}
   hauntApplyClip: {fileID: 8300000, guid: de2cc8b4123899047af4796df49c3d75, type: 3}
+  rushReadyClip: {fileID: 0}
+  rushActivateClip: {fileID: 0}
+  rushLoopClip: {fileID: 8300000, guid: 2898c901ce116ef43bce37b11068c98d, type: 3}
+  rushLoopVolume: 0.85
+  rushFadeInDuration: 0.25
+  rushFadeOutDuration: 0.35
   countdownTickClip: {fileID: 8300000, guid: 7a8d840f7c1e1124bbf6bbbbabbdebd2, type: 3}
   waveStartClip: {fileID: 8300000, guid: e692fee537bcecd478133c4a26bff57e, type: 3}
 --- !u!4 &1833040488

@@ -1,3 +1,4 @@
+using System.Collections;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
@@ -26,12 +27,21 @@ public class SFXManager : MonoBehaviour
     [SerializeField] AudioClip shieldBreakClip;     // shield destroys an enemy
     [SerializeField] AudioClip giantSquishClip;     // giant squishes an enemy
     [SerializeField] AudioClip hauntApplyClip;      // enemy gets haunted
+    [SerializeField] AudioClip rushReadyClip;       // rush charge reaches 100%
+    [SerializeField] AudioClip rushActivateClip;    // player triggers rush
+    [SerializeField] AudioClip rushLoopClip;        // looping rush ambience while active
+    [SerializeField, Range(0f, 1f)] float rushLoopVolume = 0.85f;
+    [SerializeField, Min(0f)] float rushFadeInDuration = 0.25f;
+    [SerializeField, Min(0f)] float rushFadeOutDuration = 0.35f;
 
     [Header("Waves")]
     [SerializeField] AudioClip countdownTickClip;    // each second of the countdown timer
     [SerializeField] AudioClip waveStartClip;        // new wave begins
 
     AudioSource audioSource;
+    AudioSource rushLoopSource;
+    Coroutine rushFadeRoutine;
+    bool rushLoopTargetOn;
     bool pausedByMenu;
 
     // shared across scenes — MenuSettings writes these
@@ -66,6 +76,11 @@ public class SFXManager : MonoBehaviour
 
         audioSource = gameObject.AddComponent<AudioSource>();
         audioSource.playOnAwake = false;
+
+        rushLoopSource = gameObject.AddComponent<AudioSource>();
+        rushLoopSource.playOnAwake = false;
+        rushLoopSource.loop = true;
+        rushLoopSource.volume = 0f;
     }
 
     // call after changing master or sfx volume to apply immediately
@@ -73,6 +88,10 @@ public class SFXManager : MonoBehaviour
     {
         if (audioSource != null)
             audioSource.volume = SharedMasterVolume * SharedVolume;
+
+        // keep loop volume in sync with settings changes
+        if (rushLoopSource != null && rushLoopSource.isPlaying)
+            rushLoopSource.volume = GetRushTargetVolume();
     }
 
     void Update()
@@ -85,11 +104,13 @@ public class SFXManager : MonoBehaviour
         if (shouldPauseForMenu && !pausedByMenu)
         {
             audioSource.Pause();
+            if (rushLoopSource != null) rushLoopSource.Pause();
             pausedByMenu = true;
         }
         else if (!shouldPauseForMenu && pausedByMenu)
         {
             audioSource.UnPause();
+            if (rushLoopSource != null) rushLoopSource.UnPause();
             pausedByMenu = false;
         }
     }
@@ -114,8 +135,39 @@ public class SFXManager : MonoBehaviour
     public void PlayShieldBreak()     => Play(shieldBreakClip);
     public void PlayGiantSquish()     => Play(giantSquishClip);
     public void PlayHauntApply()      => Play(hauntApplyClip);
+    public void PlayRushReady()       => Play(rushReadyClip);
+    public void PlayRushActivate()    => Play(rushActivateClip);
     public void PlayCountdownTick()    => Play(countdownTickClip);
     public void PlayWaveStart()       => Play(waveStartClip);
+
+    public void StartRushLoop()
+    {
+        if (rushLoopClip == null || rushLoopSource == null) return;
+
+        rushLoopTargetOn = true;
+        rushLoopSource.clip = rushLoopClip;
+        if (!rushLoopSource.isPlaying)
+        {
+            rushLoopSource.volume = 0f;
+            rushLoopSource.Play();
+        }
+
+        StartRushFade(GetRushTargetVolume(), rushFadeInDuration, stopAfterFade: false);
+    }
+
+    public void StopRushLoop()
+    {
+        if (rushLoopSource == null) return;
+
+        rushLoopTargetOn = false;
+        if (!rushLoopSource.isPlaying)
+        {
+            rushLoopSource.volume = 0f;
+            return;
+        }
+
+        StartRushFade(0f, rushFadeOutDuration, stopAfterFade: true);
+    }
 
     // landing needs height tracking — called from PlayerControllerX
     public float MinFallHeight => minFallHeight;
@@ -125,6 +177,18 @@ public class SFXManager : MonoBehaviour
         // don't let one-shots carry across scenes
         if (audioSource == null) return;
         audioSource.Stop();
+        if (rushFadeRoutine != null)
+        {
+            StopCoroutine(rushFadeRoutine);
+            rushFadeRoutine = null;
+        }
+        if (rushLoopSource != null)
+        {
+            rushLoopSource.Stop();
+            rushLoopSource.volume = 0f;
+            rushLoopSource.clip = null;
+        }
+        rushLoopTargetOn = false;
         pausedByMenu = false;
     }
 
@@ -133,5 +197,47 @@ public class SFXManager : MonoBehaviour
         if (Instance == this)
             Instance = null;
         SceneManager.activeSceneChanged -= OnActiveSceneChanged;
+    }
+
+    float GetRushTargetVolume()
+    {
+        return rushLoopTargetOn ? rushLoopVolume * SharedMasterVolume * SharedVolume : 0f;
+    }
+
+    void StartRushFade(float targetVolume, float duration, bool stopAfterFade)
+    {
+        if (rushFadeRoutine != null)
+            StopCoroutine(rushFadeRoutine);
+        rushFadeRoutine = StartCoroutine(FadeRushLoopRoutine(targetVolume, duration, stopAfterFade));
+    }
+
+    IEnumerator FadeRushLoopRoutine(float targetVolume, float duration, bool stopAfterFade)
+    {
+        if (rushLoopSource == null) yield break;
+
+        float start = rushLoopSource.volume;
+        if (duration <= 0.0001f)
+        {
+            rushLoopSource.volume = targetVolume;
+            if (stopAfterFade && targetVolume <= 0.0001f)
+                rushLoopSource.Stop();
+            rushFadeRoutine = null;
+            yield break;
+        }
+
+        float elapsed = 0f;
+        while (elapsed < duration)
+        {
+            elapsed += Time.unscaledDeltaTime;
+            float t = Mathf.Clamp01(elapsed / duration);
+            rushLoopSource.volume = Mathf.Lerp(start, targetVolume, t);
+            yield return null;
+        }
+
+        rushLoopSource.volume = targetVolume;
+        if (stopAfterFade && targetVolume <= 0.0001f)
+            rushLoopSource.Stop();
+
+        rushFadeRoutine = null;
     }
 }

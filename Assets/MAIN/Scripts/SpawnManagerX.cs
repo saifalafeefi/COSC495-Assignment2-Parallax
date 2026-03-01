@@ -34,6 +34,7 @@ public class SpawnManagerX : MonoBehaviour
     [SerializeField, Range(0f, 1f)] private float giantChance = 0.2f;
     [SerializeField, Range(0f, 1f)] private float hauntChance = 0.2f;
     [SerializeField, Range(0f, 1f)] private float rushChance = 0.2f;
+    [SerializeField] private bool spawnRushAsPickup = false; // passive rush ability replaces world pickup by default
 
     // spawn area tuning — exposed so designers can tweak in Inspector
     [Header("Spawn Area")]
@@ -46,6 +47,7 @@ public class SpawnManagerX : MonoBehaviour
     [SerializeField] private float scorePowerupChance = 0.5f;      // 0-1 chance per enemy scored
     [SerializeField] private float powerupDroughtTime = 30f;       // seconds without powerup before auto-spawn
     [SerializeField] private int maxActivePowerups = 2;             // cap on simultaneous powerups
+    [SerializeField] private float spawnPointOccupancyRadius = 0.75f; // how close a powerup must be to count as occupying a spawn point
 
     [Header("Waves")]
     [SerializeField] private int waveCount = 1;
@@ -160,16 +162,47 @@ public class SpawnManagerX : MonoBehaviour
         return transform.position + new Vector3(xPos, 0, zPos);
     }
 
-    // pick a random designer-placed spawn point for powerups
-    Vector3 GetRandomPowerupSpawnPoint()
+    bool IsSpawnPointOccupied(Transform spawnPoint)
     {
+        if (spawnPoint == null) return false;
+        float occupancySqr = spawnPointOccupancyRadius * spawnPointOccupancyRadius;
+        foreach (var tracker in PowerupTracker.ActiveTrackers)
+        {
+            if (tracker == null) continue;
+            Vector3 delta = tracker.transform.position - spawnPoint.position;
+            delta.y = 0f;
+            if (delta.sqrMagnitude <= occupancySqr)
+                return true;
+        }
+        return false;
+    }
+
+    // one-powerup-per-spot: only choose currently unoccupied spawn points
+    bool TryGetAvailablePowerupSpawnPoint(out Vector3 point)
+    {
+        point = transform.position;
+
         if (powerupSpawnPoints == null || powerupSpawnPoints.Length == 0)
         {
             // fallback if no points set — spawn at this object's position
             Debug.LogWarning("SpawnManagerX: no powerup spawn points assigned!");
-            return transform.position;
+            return false;
         }
-        return powerupSpawnPoints[Random.Range(0, powerupSpawnPoints.Length)].position;
+
+        List<int> freeIndices = new List<int>(powerupSpawnPoints.Length);
+        for (int i = 0; i < powerupSpawnPoints.Length; i++)
+        {
+            if (powerupSpawnPoints[i] == null) continue;
+            if (!IsSpawnPointOccupied(powerupSpawnPoints[i]))
+                freeIndices.Add(i);
+        }
+
+        if (freeIndices.Count == 0)
+            return false;
+
+        int chosen = freeIndices[Random.Range(0, freeIndices.Count)];
+        point = powerupSpawnPoints[chosen].position;
+        return true;
     }
 
     // pick a random enemy prefab using slider weights
@@ -204,7 +237,7 @@ public class SpawnManagerX : MonoBehaviour
         float wShield = shieldPowerupPrefab != null ? shieldChance : 0f;
         float wGiant = giantPowerupPrefab != null ? giantChance : 0f;
         float wHaunt = hauntPowerupPrefab != null ? hauntChance : 0f;
-        float wRush = rushPowerupPrefab != null ? rushChance : 0f;
+        float wRush = (spawnRushAsPickup && rushPowerupPrefab != null) ? rushChance : 0f;
 
         float total = wKnockback + wSmash + wShield + wGiant + wHaunt + wRush;
         if (total <= 0f) return null;
@@ -231,7 +264,8 @@ public class SpawnManagerX : MonoBehaviour
         GameObject prefab = PickRandomPowerupPrefab();
         if (prefab == null) return;
 
-        Vector3 pos = GetRandomPowerupSpawnPoint();
+        if (!TryGetAvailablePowerupSpawnPoint(out Vector3 pos)) return;
+
         GameObject spawned = Instantiate(prefab, pos, prefab.transform.rotation);
         spawned.AddComponent<PowerupTracker>();
 
@@ -290,6 +324,24 @@ public class SpawnManagerX : MonoBehaviour
 /// </summary>
 public class PowerupTracker : MonoBehaviour
 {
-    void Start() { SpawnManagerX.activePowerupCount++; }
-    void OnDestroy() { SpawnManagerX.activePowerupCount--; }
+    private static readonly List<PowerupTracker> activeTrackers = new List<PowerupTracker>();
+    public static IReadOnlyList<PowerupTracker> ActiveTrackers => activeTrackers;
+
+    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+    static void ResetStatics()
+    {
+        activeTrackers.Clear();
+    }
+
+    void Start()
+    {
+        SpawnManagerX.activePowerupCount++;
+        activeTrackers.Add(this);
+    }
+
+    void OnDestroy()
+    {
+        SpawnManagerX.activePowerupCount--;
+        activeTrackers.Remove(this);
+    }
 }

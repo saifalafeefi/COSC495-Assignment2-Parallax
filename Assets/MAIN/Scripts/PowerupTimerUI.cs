@@ -23,6 +23,11 @@ public class PowerupTimerUI : MonoBehaviour
     [SerializeField] private float pulseScale = 0.1f;
     [SerializeField] private float pulseMinAlpha = 0.55f;
     [SerializeField] private float pulseMaxAlpha = 1f;
+    [Header("Rush Row")]
+    [SerializeField] private string rushReadyText = "READY (Q)";
+    [SerializeField] private float rushRainbowSpeed = 0.45f;
+    [SerializeField, Range(0f, 1f)] private float rushRainbowSaturation = 0.95f;
+    [SerializeField, Range(0f, 1f)] private float rushRainbowValue = 1f;
 
     // colors match the powerup overlay tints
     private static readonly Color knockbackColor = new Color(1f, 0.85f, 0.2f);  // yellow
@@ -54,7 +59,6 @@ public class PowerupTimerUI : MonoBehaviour
     private float shieldDisplayMaxUnits;
     private float giantDisplayMax;
     private float hauntDisplayMax;
-    private float rushDisplayMax;
 
     void Start()
     {
@@ -78,7 +82,7 @@ public class PowerupTimerUI : MonoBehaviour
         UpdateShieldRow();
         UpdateTimedRow(giantRow, playerController.GiantTimer, ref giantDisplayMax);
         UpdateTimedRow(hauntRow, playerController.HauntTimer, ref hauntDisplayMax);
-        UpdateTimedRow(rushRow, playerController.RushTimer, ref rushDisplayMax);
+        UpdateRushRow();
         ReflowRows();
     }
 
@@ -157,6 +161,39 @@ public class PowerupTimerUI : MonoBehaviour
             shieldDisplayMaxUnits = 0f;
             shieldRow.root.gameObject.SetActive(false);
             ApplyPulse(shieldRow, false);
+        }
+    }
+
+    void UpdateRushRow()
+    {
+        if (rushRow == null || rushRow.root == null) return;
+
+        rushRow.root.gameObject.SetActive(true);
+        float ratio = Mathf.Clamp01(playerController.RushChargeNormalized);
+        if (rushRow.fillRect != null)
+            rushRow.fillRect.sizeDelta = new Vector2(barWidth * ratio, barHeight);
+
+        if (playerController.IsRushActive)
+        {
+            rushRow.timer.text = $"{playerController.RushTimer:F1}s";
+            float hue = Mathf.Repeat(Time.time * rushRainbowSpeed, 1f);
+            Color rainbow = Color.HSVToRGB(hue, rushRainbowSaturation, rushRainbowValue);
+            if (rushRow.fillRect != null) rushRow.fillRect.localScale = Vector3.one;
+            if (rushRow.fillImage != null) rushRow.fillImage.color = rainbow;
+        }
+        else if (playerController.IsRushReady)
+        {
+            rushRow.timer.text = rushReadyText;
+            if (rushRow.fillImage != null) rushRow.fillImage.color = rushRow.fillBaseColor;
+            ApplyPulse(rushRow, true);
+        }
+        else
+        {
+            float chargeTime = Mathf.Max(0.01f, playerController.RushChargeTimeToReady);
+            float secondsLeft = (1f - ratio) * chargeTime;
+            rushRow.timer.text = $"{secondsLeft:F1}s";
+            if (rushRow.fillRect != null) rushRow.fillRect.localScale = Vector3.one;
+            if (rushRow.fillImage != null) rushRow.fillImage.color = rushRow.fillBaseColor;
         }
     }
 

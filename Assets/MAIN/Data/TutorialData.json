@@ -55,8 +55,8 @@
         },
         {
           "title": "RUSH",
-          "description": "Kick into overdrive with chaotic colorful energy. You move faster while every enemy is greatly slowed. The effect ends when the timer runs out.",
-          "stats": "Buff duration: 10s\nPlayer speed: 1.6x\nEnemy speed: 20%\nStacking: extends timer"
+          "description": "A passive ability that charges over time. When the bar is full, press Q to trigger RUSH mode: you speed up while all enemies are slowed.",
+          "stats": "Activation: Q (when ready)\nCharge: passive over time\nDuration: 10s\nEnemy speed: 20% while active"
         }
       ]
     },
