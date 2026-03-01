@@ -16,7 +16,20 @@ THEN THIS GAME IS FOR YOU!
 
 - Knock enemies into the Enemy Goal by ramming into them
 - Enemies get stunned on hit and briefly drift toward their own goal
-- Each enemy scored = +1 point, each enemy that reaches your goal = -1 life
+- Each enemy scores depending on type, each enemy that reaches your goal = -1 life
+- 3 lives total, game over when they run out
+
+**Waves:**
+
+- Enemies spawn in waves, with wave size increasing each round
+- "Wave Clear!" appears when all enemies are eliminated, followed by a countdown to the next wave
+- Player position and velocity reset between waves
+
+**Powerup Spawning:**
+
+- Powerups spawn dynamically — ~50% chance per enemy scored, plus auto-spawn after 30s drought
+- Up to 3 powerups active in the world at once, placed at designer-set spawn points
+- One powerup per spawn point — occupied spots are skipped
 
 **Movement:**
 
@@ -27,22 +40,28 @@ THEN THIS GAME IS FOR YOU!
 
 **Powerups:**
 
-Five powerup types cycle between waves, all stackable:
+Five powerup types, all stackable:
 
-- **Knockback:** Boosted push force on contact for a duration
-- **Smash:** Launch into the air, slow-mo aim, dive-bomb with AOE knockback
-- **Shield:** AOE barrier that shrinks and destroys nearby enemies on contact
-- **Giant:** Grow massive and squish enemies flat on contact
-- **Haunt:** Touched enemies aggressively home toward their own goal and spread haunt to other enemies on collision
+- **Knockback:** Boosted push force on contact for a duration. Stacks extend time
+- **Smash:** Launch into the air, slow-mo aim, dive-bomb with AOE knockback. Each pickup adds a charge, consumed on use
+- **Shield:** AOE barrier that destroys nearby enemies on contact with a shrink animation. Each stack gives 3 absorbs before breaking
+- **Giant:** Grow massive and squish enemies flat on contact. Camera pulls back while active. Stacks extend duration
+- **Haunt:** Touched enemies aggressively home toward their own goal. Haunted enemies spread haunt to normal enemies on collision (shared remaining duration). Stacks extend duration
+
+**RUSH (Passive Ability):**
+
+- Charges passively over time — press Q when the bar is full
+- While active: player speed boosted, all enemies globally slowed, music fades out
+- HUD bar always visible showing charge progress, "READY (Q)" state, and active drain
 
 **Enemy Types:**
 
-Waves start with normal enemies, then introduce new types as difficulty scales:
+All enemy types can appear from wave 1, controlled by weighted spawn chance sliders:
 
 - **Normal:** Steady march toward your goal
-- **Aggressive** (wave 3+): High acceleration, rams the player when close
-- **Evasive** (wave 5+): Slow crawl with periodic sideways dodges
-- **Tank** (wave 7+): Big, heavy, and slow
+- **Aggressive:** High acceleration, rams the player when within detect radius
+- **Evasive:** Advances toward goal with periodic sideways zigzag dodges
+- **Tank:** Big (2x scale), heavy (3x mass), and slow (0.5x speed)
 
 ## Controls
 
@@ -50,24 +69,29 @@ Waves start with normal enemies, then introduce new types as difficulty scales:
 - **Mouse:** Camera orbit
 - **Space:** Jump
 - **Shift:** Turbo dash
-- **F:** Smash attack (when charged)
+- **F:** Smash attack (when charged) / Confirm dive (during aiming)
+- **Q:** Activate RUSH (when fully charged)
 - **Escape:** Pause
 
 ## Features
 
 - Wave-based spawning with countdown between waves
-- Weighted enemy type distribution that scales with wave number
-- Powerup stacking with visual indicator clones
-- 5-phase targeted smash aiming system with slow-mo
+- 4 EPIC BIOMES TO CHOOSE FROM!!11!1111
+- Dynamic powerup spawning (score-triggered + drought timer)
+- Weighted enemy type distribution with per-type chance sliders
+- Powerup stacking with visual indicators
+- 3-phase targeted smash aiming system with slow-mo and overshoot protection
+- RUSH passive ability with enemy slowdown and music fade
 - Speed lines that intensify at high speed
 - Powerup color overlay shader with animated noise blending
 - Pixelation post-processing with adjustable pixel size
 - Skin selection with persistence across sessions
-- Main menu with physics-based smash navigation
+- Main menu with physics-based smash navigation and tutorial browser
+- Biome selection screen with multiple playable environments
+- Settings panel (pixel size, music volume, grass toggle)
 - Pause and game over screens with score/wave tracking
-- 4 EPIC BIOMES TO CHOOSE FROM!!11!1111
 
 ## Credits
 
 Built for COSC 495 Introduction to Game Development, based on Unity's Create with Code "Challenge 4" template.
-Modified and extended with custom powerup, combat, enemy AI, and camera systems.
+Modified and extended with custom powerup, combat, enemy AI, camera, audio, and menu systems.
