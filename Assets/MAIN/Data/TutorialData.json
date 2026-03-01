@@ -52,6 +52,11 @@
           "title": "Haunt",
           "description": "For a limited time, any enemy you touch gets haunted, reverse their direction and aggressively roll toward their own goal. Haunted enemies spread the curse to others on contact.",
           "stats": "Buff duration: 8s\nEnemy effect: 5s\nStacking: extends timer\nSpreads on contact"
+        },
+        {
+          "title": "RUSH",
+          "description": "Kick into overdrive with chaotic colorful energy. You move faster while every enemy is greatly slowed. The effect ends when the timer runs out.",
+          "stats": "Buff duration: 10s\nPlayer speed: 1.6x\nEnemy speed: 20%\nStacking: extends timer"
         }
       ]
     },

@@ -181,6 +181,7 @@ public class TutorialUI : MonoBehaviour
         {
             if (behaviours[i] is ParticleSystem) continue;
             if (behaviours[i] is PowerupGlow) continue;
+            if (behaviours[i] is RushPickupVisual) continue;
             Destroy(behaviours[i]);
         }
 

@@ -276,10 +276,10 @@ MonoBehaviour:
   targetRenderers: []
   autoFindRenderers: 1
   includeChildren: 1
-  baseHueCycleSpeed: 0.1
+  baseHueCycleSpeed: 0.3
   chaosFrequency: 0
   chaosAmplitude: 0
-  phaseOffsetPerRenderer: 0.09
+  phaseOffsetPerRenderer: 0
   saturation: 0.95
   value: 1
   emissionIntensity: 1.75
