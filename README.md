@@ -10,6 +10,10 @@ THEN THIS GAME IS FOR YOU!
 
 (A 3D soccer/sumo ball game where you knock enemy balls into their goal while defending your own)
 
+![Gameplay with powerups and enemies on the grass biome](screenshots/screenshot1.png)
+![Knockback active with speed lines on the space biome](screenshots/screenshot2.png)
+![Smash aiming with multiple powerups on the ice biome](screenshots/screenshot3.png)
+
 ## Gameplay
 
 **Combat:**
@@ -90,6 +94,12 @@ All enemy types can appear from wave 1, controlled by weighted spawn chance slid
 - Biome selection screen with multiple playable environments
 - Settings panel (pixel size, music volume, grass toggle)
 - Pause and game over screens with score/wave tracking
+
+## Team Roles
+
+- **Saif Alafeefi**: Programming (gameplay systems, powerups, enemy AI, optimization)
+- **Fahad Alhashimi**: Level design (biome maps, arena layout, environment art, assets)
+- **Mohamed Almehairbi**: UI/UX, sound design (menus, HUD, SFX, music), and the glorious game title
 
 ## Credits
 
