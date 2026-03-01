@@ -6156,6 +6156,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::MusicManager
   musicClip: {fileID: 8300000, guid: 73907c7e40f091543a8b7e9ea3a02ffa, type: 3}
   volume: 0.5
+  rushFadeOutDuration: 0.5
+  rushFadeInDuration: 1
+  rushMutedVolume: 0
 --- !u!4 &1105599879 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 2725327970544891917, guid: 4fce5015e4d7cc943a5a323698a78229, type: 3}
@@ -11541,9 +11544,9 @@ MonoBehaviour:
   rushReadyClip: {fileID: 0}
   rushActivateClip: {fileID: 0}
   rushLoopClip: {fileID: 8300000, guid: 2898c901ce116ef43bce37b11068c98d, type: 3}
-  rushLoopVolume: 0.85
-  rushFadeInDuration: 0.25
-  rushFadeOutDuration: 0.35
+  rushLoopVolume: 0.6
+  rushFadeInDuration: 0.35
+  rushFadeOutDuration: 0.5
   countdownTickClip: {fileID: 8300000, guid: 7a8d840f7c1e1124bbf6bbbbabbdebd2, type: 3}
   waveStartClip: {fileID: 8300000, guid: e692fee537bcecd478133c4a26bff57e, type: 3}
 --- !u!4 &1833040488

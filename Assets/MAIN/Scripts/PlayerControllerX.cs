@@ -53,7 +53,6 @@ public class PlayerControllerX : MonoBehaviour
     private float smashRadius = 15f;
     private float maxSmashForce = 50f;
     private float minSmashForce = 10f;
-    private Vector3 smashStackMultiplier = Vector3.one; // scales stackSpacing for this powerup
 
     // shield powerup
     private int shieldStacks;
@@ -102,7 +101,6 @@ public class PlayerControllerX : MonoBehaviour
     // X/Z = scale growth per stack, Y = vertical position offset per stack
     public Vector3 stackSpacing = new Vector3(0.3f, 0.15f, 0.3f);
     [SerializeField] private float indicatorYOffset = -0.6f; // vertical offset below player for indicators
-    private List<GameObject> smashIndicators = new List<GameObject>();
     private List<GameObject> shieldIndicators = new List<GameObject>();
     private Vector3 smashIndicatorBaseScale;
     private Vector3 shieldIndicatorBaseScale;
@@ -257,6 +255,7 @@ public class PlayerControllerX : MonoBehaviour
                 rushTimer = 0f;
                 EnemyX.SetGlobalSpeedMultiplier(1f);
                 if (SFXManager.Instance != null) SFXManager.Instance.StopRushLoop();
+                if (MusicManager.Instance != null) MusicManager.Instance.FadeFromRush();
             }
         }
         else
@@ -401,7 +400,7 @@ public class PlayerControllerX : MonoBehaviour
         Vector3 indicatorPos = transform.position + new Vector3(0, indicatorYOffset, 0);
 
         if (powerupIndicator != null) powerupIndicator.transform.position = indicatorPos;
-        UpdateIndicatorPosition(smashPowerupIndicator, smashIndicators, smashStackMultiplier, indicatorPos);
+        if (smashPowerupIndicator != null) smashPowerupIndicator.transform.position = indicatorPos;
         if (giantPowerupIndicator != null) giantPowerupIndicator.transform.position = indicatorPos;
         if (hauntIndicator != null) hauntIndicator.transform.position = indicatorPos;
 
@@ -601,20 +600,13 @@ public class PlayerControllerX : MonoBehaviour
             smashRadius = pickup.smashRadius;
             maxSmashForce = pickup.maxSmashForce;
             minSmashForce = pickup.minSmashForce;
-            smashStackMultiplier = pickup.stackMultiplier;
             EnsureIndicatorInstance(pickup.indicatorPrefab, ref smashPowerupIndicator, ref smashIndicatorBaseScale);
         }
 
 
         smashPowerupStacks++;
-        if (smashPowerupStacks == 1)
-        {
-            if (smashPowerupIndicator != null) smashPowerupIndicator.SetActive(true);
-        }
-        else
-        {
-            SpawnExtraIndicator(smashPowerupIndicator, smashIndicatorBaseScale, smashIndicators, false, smashStackMultiplier);
-        }
+        // single indicator regardless of stack count (like haunt)
+        if (smashPowerupIndicator != null) smashPowerupIndicator.SetActive(true);
     }
 
     void ApplyShieldPickup(ShieldPowerupPickup pickup)
@@ -704,6 +696,7 @@ public class PlayerControllerX : MonoBehaviour
             SFXManager.Instance.PlayRushActivate();
             SFXManager.Instance.StartRushLoop();
         }
+        if (MusicManager.Instance != null) MusicManager.Instance.FadeToRush();
     }
 
     float GetCurrentSpeedMultiplier()
@@ -951,12 +944,7 @@ public class PlayerControllerX : MonoBehaviour
         if (smashPowerupStacks <= 0)
         {
             smashPowerupStacks = 0;
-            ClearExtraIndicators(smashIndicators);
             if (smashPowerupIndicator != null) smashPowerupIndicator.SetActive(false);
-        }
-        else
-        {
-            RemoveExtraIndicator(smashIndicators);
         }
         if (landingIndicator != null)
         {
@@ -1258,6 +1246,7 @@ public class PlayerControllerX : MonoBehaviour
         {
             EnemyX.SetGlobalSpeedMultiplier(1f);
             if (SFXManager.Instance != null) SFXManager.Instance.StopRushLoop();
+            if (MusicManager.Instance != null) MusicManager.Instance.FadeFromRush();
         }
     }
 
