@@ -83,7 +83,7 @@ GameObject:
   - component: {fileID: 4001027858687150935}
   - component: {fileID: 4338600800883522443}
   - component: {fileID: 390451342742388068}
-  m_Layer: 0
+  m_Layer: 7
   m_Name: ArenaBounds
   m_TagString: Untagged
   m_Icon: {fileID: 0}

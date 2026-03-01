@@ -8,27 +8,40 @@ public class SFXManager : MonoBehaviour
 
     [Header("Player")]
     [SerializeField] AudioClip landingClip;
+    [SerializeField, Range(0f, 1f)] float landingVolume = 1f;
     [SerializeField] float minFallHeight = 3f; // minimum Y drop before landing SFX plays
 
     [Header("Combat")]
     [SerializeField] AudioClip enemyHitClip;       // player bumps into enemy
+    [SerializeField, Range(0f, 1f)] float enemyHitVolume = 1f;
     [SerializeField] AudioClip enemyScoreClip;      // enemy knocked into Enemy Goal
+    [SerializeField, Range(0f, 1f)] float enemyScoreVolume = 1f;
     [SerializeField] AudioClip playerGoalClip;      // enemy reaches Player Goal (lose life)
+    [SerializeField, Range(0f, 1f)] float playerGoalVolume = 1f;
 
     [Header("Powerups")]
     [SerializeField] AudioClip powerupPickupClip;   // any powerup collected
+    [SerializeField, Range(0f, 1f)] float powerupPickupVolume = 1f;
 
     [Header("Smash")]
     [SerializeField] AudioClip smashLaunchClip;     // phase 1 — jump
+    [SerializeField, Range(0f, 1f)] float smashLaunchVolume = 1f;
     [SerializeField] AudioClip smashDiveClip;       // phase 4 — dive starts
+    [SerializeField, Range(0f, 1f)] float smashDiveVolume = 1f;
     [SerializeField] AudioClip smashImpactClip;     // phase 5 — landing
+    [SerializeField, Range(0f, 1f)] float smashImpactVolume = 1f;
 
     [Header("Powerup Effects")]
     [SerializeField] AudioClip shieldBreakClip;     // shield destroys an enemy
+    [SerializeField, Range(0f, 1f)] float shieldBreakVolume = 1f;
     [SerializeField] AudioClip giantSquishClip;     // giant squishes an enemy
+    [SerializeField, Range(0f, 1f)] float giantSquishVolume = 1f;
     [SerializeField] AudioClip hauntApplyClip;      // enemy gets haunted
+    [SerializeField, Range(0f, 1f)] float hauntApplyVolume = 1f;
     [SerializeField] AudioClip rushReadyClip;       // rush charge reaches 100%
+    [SerializeField, Range(0f, 1f)] float rushReadyVolume = 1f;
     [SerializeField] AudioClip rushActivateClip;    // player triggers rush
+    [SerializeField, Range(0f, 1f)] float rushActivateVolume = 1f;
     [SerializeField] AudioClip rushLoopClip;        // looping rush ambience while active
     [SerializeField, Range(0f, 1f)] float rushLoopVolume = 0.85f;
     [SerializeField, Min(0f)] float rushFadeInDuration = 0.25f;
@@ -36,7 +49,9 @@ public class SFXManager : MonoBehaviour
 
     [Header("Waves")]
     [SerializeField] AudioClip countdownTickClip;    // each second of the countdown timer
+    [SerializeField, Range(0f, 1f)] float countdownTickVolume = 1f;
     [SerializeField] AudioClip waveStartClip;        // new wave begins
+    [SerializeField, Range(0f, 1f)] float waveStartVolume = 1f;
 
     AudioSource audioSource;
     AudioSource rushLoopSource;
@@ -122,23 +137,30 @@ public class SFXManager : MonoBehaviour
             audioSource.PlayOneShot(clip, SharedMasterVolume * SharedVolume);
     }
 
+    // play with per-clip volume multiplier
+    void Play(AudioClip clip, float clipVolume)
+    {
+        if (clip != null && audioSource != null)
+            audioSource.PlayOneShot(clip, SharedMasterVolume * SharedVolume * clipVolume);
+    }
+
     // --- named helpers so callers don't need clip references ---
 
-    public void PlayLanding()         => Play(landingClip);
-    public void PlayEnemyHit()        => Play(enemyHitClip);
-    public void PlayEnemyScore()      => Play(enemyScoreClip);
-    public void PlayPlayerGoal()      => Play(playerGoalClip);
-    public void PlayPowerupPickup()   => Play(powerupPickupClip);
-    public void PlaySmashLaunch()     => Play(smashLaunchClip);
-    public void PlaySmashDive()       => Play(smashDiveClip);
-    public void PlaySmashImpact()     => Play(smashImpactClip);
-    public void PlayShieldBreak()     => Play(shieldBreakClip);
-    public void PlayGiantSquish()     => Play(giantSquishClip);
-    public void PlayHauntApply()      => Play(hauntApplyClip);
-    public void PlayRushReady()       => Play(rushReadyClip);
-    public void PlayRushActivate()    => Play(rushActivateClip);
-    public void PlayCountdownTick()    => Play(countdownTickClip);
-    public void PlayWaveStart()       => Play(waveStartClip);
+    public void PlayLanding()         => Play(landingClip, landingVolume);
+    public void PlayEnemyHit()        => Play(enemyHitClip, enemyHitVolume);
+    public void PlayEnemyScore()      => Play(enemyScoreClip, enemyScoreVolume);
+    public void PlayPlayerGoal()      => Play(playerGoalClip, playerGoalVolume);
+    public void PlayPowerupPickup()   => Play(powerupPickupClip, powerupPickupVolume);
+    public void PlaySmashLaunch()     => Play(smashLaunchClip, smashLaunchVolume);
+    public void PlaySmashDive()       => Play(smashDiveClip, smashDiveVolume);
+    public void PlaySmashImpact()     => Play(smashImpactClip, smashImpactVolume);
+    public void PlayShieldBreak()     => Play(shieldBreakClip, shieldBreakVolume);
+    public void PlayGiantSquish()     => Play(giantSquishClip, giantSquishVolume);
+    public void PlayHauntApply()      => Play(hauntApplyClip, hauntApplyVolume);
+    public void PlayRushReady()       => Play(rushReadyClip, rushReadyVolume);
+    public void PlayRushActivate()    => Play(rushActivateClip, rushActivateVolume);
+    public void PlayCountdownTick()    => Play(countdownTickClip, countdownTickVolume);
+    public void PlayWaveStart()       => Play(waveStartClip, waveStartVolume);
 
     public void StartRushLoop()
     {

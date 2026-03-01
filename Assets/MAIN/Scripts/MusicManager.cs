@@ -34,6 +34,9 @@ public class MusicManager : MonoBehaviour
         PlayerPrefs.Save();
     }
 
+    // effective volume = inspector clip volume * master * music setting
+    float EffectiveVolume => volume * SFXManager.SharedMasterVolume * SharedVolume;
+
     void Awake()
     {
         // singleton — survive scene loads, destroy duplicates
@@ -49,7 +52,7 @@ public class MusicManager : MonoBehaviour
         audioSource = gameObject.AddComponent<AudioSource>();
         audioSource.clip = musicClip;
         audioSource.loop = true;
-        audioSource.volume = SFXManager.SharedMasterVolume * SharedVolume;
+        audioSource.volume = EffectiveVolume;
         audioSource.playOnAwake = false;
         audioSource.Play();
     }
@@ -63,14 +66,14 @@ public class MusicManager : MonoBehaviour
             fadeTarget = -1f;
     }
 
-    // effective volume = master * music
+    // refresh volume from current settings (called by MenuSettings on slider change)
     public void ApplyVolume()
     {
         if (audioSource != null)
         {
             // cancel any active fade so the new volume sticks
             fadeTarget = -1f;
-            audioSource.volume = SFXManager.SharedMasterVolume * SharedVolume;
+            audioSource.volume = EffectiveVolume;
         }
     }
 
@@ -85,7 +88,7 @@ public class MusicManager : MonoBehaviour
     public void FadeToRush()
     {
         if (audioSource == null) return;
-        float target = SFXManager.SharedMasterVolume * SharedVolume * rushMutedVolume;
+        float target = EffectiveVolume * rushMutedVolume;
         float duration = rushFadeOutDuration > 0.001f ? rushFadeOutDuration : 0.001f;
         fadeSpeed = Mathf.Abs(audioSource.volume - target) / duration;
         fadeTarget = target;
@@ -95,7 +98,7 @@ public class MusicManager : MonoBehaviour
     public void FadeFromRush()
     {
         if (audioSource == null) return;
-        float target = SFXManager.SharedMasterVolume * SharedVolume;
+        float target = EffectiveVolume;
         float duration = rushFadeInDuration > 0.001f ? rushFadeInDuration : 0.001f;
         fadeSpeed = Mathf.Abs(target - audioSource.volume) / duration;
         fadeTarget = target;

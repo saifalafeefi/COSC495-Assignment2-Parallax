@@ -306,7 +306,7 @@ public class PlayerControllerX : MonoBehaviour
         if (isAiming && landingIndicator != null)
         {
             Ray aimRay = new Ray(transform.position, focalPoint.transform.forward);
-            if (Physics.Raycast(aimRay, out RaycastHit hit, 200f))
+            if (Physics.Raycast(aimRay, out RaycastHit hit, 200f, ~0, QueryTriggerInteraction.Ignore))
             {
                 landingTarget = hit.point;
                 landingIndicator.transform.position = hit.point + new Vector3(0, 0.15f, 0);
@@ -911,23 +911,51 @@ public class PlayerControllerX : MonoBehaviour
         diveCollided = false;
         float currentDiveSpeed = diveSpeed;
         // maxDiveSpeed configured in Inspector
+        Vector3 initialDiveDir = (landingTarget - transform.position).normalized;
+        float initialDist = (landingTarget - transform.position).magnitude;
+        float prevDist = initialDist;
+        Debug.Log($"[Smash Dive] START — pos={transform.position} target={landingTarget} dist={initialDist:F2} diveSpeed={diveSpeed} maxDive={maxDiveSpeed} timeScale={Time.timeScale}");
+        int diveFrame = 0;
         while (!diveCollided)
         {
             if (transform.position.y < -5f)
             {
+                Debug.LogWarning($"[Smash Dive] ABORT — fell below Y=-5 at pos={transform.position} frame={diveFrame}");
                 break;
             }
+
+            float distToTarget = (landingTarget - transform.position).magnitude;
+            Vector3 toTarget = landingTarget - transform.position;
+
+            // overshoot detection: if we passed the target (direction flipped) or got very close, snap and land
+            bool overshot = Vector3.Dot(toTarget.normalized, initialDiveDir) <= 0f;
+            bool closeEnough = distToTarget < 1.5f;
+            bool movingAway = distToTarget > prevDist + 0.01f;
+            if (overshot || closeEnough || movingAway)
+            {
+                // teleport to landing target so impact happens at the right spot
+                playerRb.MovePosition(landingTarget);
+                playerRb.linearVelocity = initialDiveDir * currentDiveSpeed;
+                Debug.Log($"[Smash Dive] SNAP — reason={( overshot ? "overshot" : closeEnough ? "closeEnough" : "movingAway" )} dist={distToTarget:F2} prevDist={prevDist:F2} frame={diveFrame}");
+                break;
+            }
+
+            prevDist = distToTarget;
             currentDiveSpeed += diveAcceleration * Time.fixedUnscaledDeltaTime;
-            Vector3 diveDirection = (landingTarget - transform.position).normalized;
+            Vector3 diveDirection = toTarget.normalized;
             // compensate for slow-mo so the player dives at full real-time speed
             float timeCompensation = Time.timeScale > 0 ? 1f / Time.timeScale : 1f;
             float compensatedSpeed = Mathf.Min(currentDiveSpeed * timeCompensation, maxDiveSpeed);
             playerRb.linearVelocity = diveDirection * compensatedSpeed;
+            Debug.Log($"[Smash Dive] frame={diveFrame} pos={transform.position} vel={playerRb.linearVelocity} speed={compensatedSpeed:F1} dist={distToTarget:F2} dir={diveDirection} collisionMode={playerRb.collisionDetectionMode}");
+            diveFrame++;
             yield return new WaitForFixedUpdate();
         }
+        Debug.Log($"[Smash Dive] END — diveCollided={diveCollided} pos={transform.position} vel={playerRb.linearVelocity} frame={diveFrame}");
         isDiving = false;
 
         // --- Phase 5: Impact — kill momentum, restore time, then smash ---
+        Debug.Log($"[Smash Impact] pos={transform.position} velocity zeroed, restoring timeScale");
         playerRb.linearVelocity = Vector3.zero;
         playerRb.angularVelocity = Vector3.zero;
         // restore discrete now that dive is over
@@ -1256,6 +1284,8 @@ public class PlayerControllerX : MonoBehaviour
         // any collision during dive = landed, skip knockback so physics doesn't fight the dive
         if (isDiving)
         {
+            ContactPoint cp = other.contactCount > 0 ? other.GetContact(0) : default;
+            Debug.Log($"[Smash Dive] COLLISION — hit={other.gameObject.name} tag={other.gameObject.tag} normal={cp.normal} point={cp.point} playerPos={transform.position} vel={playerRb.linearVelocity}");
             diveCollided = true;
             RecordDiveImpact(other);
             return;
