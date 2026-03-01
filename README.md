@@ -1,4 +1,4 @@
-# Supersonic Acrobatic Rocket-Powered Battle-Cars (SARPBC for short)
+# Supersonic Acrobatic Rocket-Powered Battle-Balls (SARPBB for short)
 
 DO YOU HAVE WHAT IT TAKES TO PROTECT YOUR NET AGAINST ALL ODDS?
 
