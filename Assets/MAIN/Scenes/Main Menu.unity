@@ -11557,13 +11557,13 @@ MonoBehaviour:
   rushActivateClip: {fileID: 0}
   rushActivateVolume: 1
   rushLoopClip: {fileID: 8300000, guid: 2898c901ce116ef43bce37b11068c98d, type: 3}
-  rushLoopVolume: 0.6
+  rushLoopVolume: 0.2
   rushFadeInDuration: 0.35
   rushFadeOutDuration: 0.5
   countdownTickClip: {fileID: 8300000, guid: 7a8d840f7c1e1124bbf6bbbbabbdebd2, type: 3}
   countdownTickVolume: 1
   waveStartClip: {fileID: 8300000, guid: e692fee537bcecd478133c4a26bff57e, type: 3}
-  waveStartVolume: 0.4
+  waveStartVolume: 0.25
 --- !u!4 &1833040488
 Transform:
   m_ObjectHideFlags: 0
