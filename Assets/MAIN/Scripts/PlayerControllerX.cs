@@ -135,6 +135,13 @@ public class PlayerControllerX : MonoBehaviour
     private Coroutine smashCoroutine;
     private static Shader cachedSpriteShader; // avoid Shader.Find every Start
 
+    // cached input for FixedUpdate — read in Update, applied in FixedUpdate
+    private Vector3 pendingMoveDirection;
+    private float pendingSpeedFactor;
+    private bool pendingJump;
+    private bool pendingTurbo;
+    private Vector3 pendingDashDirection;
+
     void Start()
     {
         playerRb = GetComponent<Rigidbody>();
@@ -197,6 +204,24 @@ public class PlayerControllerX : MonoBehaviour
         if (playerRb.useGravity && !isGrounded)
         {
             playerRb.AddForce(Physics.gravity * (gravityMultiplier - 1f), ForceMode.Acceleration);
+        }
+
+        // apply movement force (cached from Update input)
+        if (!isSmashing && Time.timeScale > 0f)
+        {
+            playerRb.AddForce(pendingMoveDirection * speed * GetCurrentSpeedMultiplier() * pendingSpeedFactor, ForceMode.Force);
+
+            if (pendingJump)
+            {
+                pendingJump = false;
+                playerRb.AddForce(Vector3.up * jumpForce, ForceMode.Impulse);
+            }
+
+            if (pendingTurbo)
+            {
+                pendingTurbo = false;
+                playerRb.AddForce(pendingDashDirection * turboStrength, ForceMode.Impulse);
+            }
         }
     }
 
@@ -322,10 +347,9 @@ public class PlayerControllerX : MonoBehaviour
         // disable movement and turbo during smash
         if (!isSmashing)
         {
-            // move player relative to camera direction (WASD)
+            // read input in Update (responsive), apply forces in FixedUpdate (framerate-independent)
             float verticalInput = Input.GetAxis("Vertical");
             float horizontalInput = Input.GetAxis("Horizontal");
-            // flatten to horizontal so looking up/down doesn't launch the player
             Vector3 flatForward = new Vector3(focalPoint.transform.forward.x, 0, focalPoint.transform.forward.z).normalized;
             Vector3 flatRight = new Vector3(focalPoint.transform.right.x, 0, focalPoint.transform.right.z).normalized;
             Vector3 moveDirection = flatForward * verticalInput + flatRight * horizontalInput;
@@ -335,43 +359,42 @@ public class PlayerControllerX : MonoBehaviour
                 lastMoveDirection = moveDirection;
             }
 
-            // brake hard when changing direction, so movement feels snappy
+            // cache for FixedUpdate
+            pendingMoveDirection = moveDirection;
             Vector3 flatVelocity = new Vector3(playerRb.linearVelocity.x, 0, playerRb.linearVelocity.z);
+            float currentSpeed = flatVelocity.magnitude;
+            float currentMaxSpeed = maxSpeed * GetCurrentMaxSpeedMultiplier();
+            pendingSpeedFactor = Mathf.Clamp01(1f - currentSpeed / currentMaxSpeed);
+
+            // brake hard when changing direction, so movement feels snappy
             if (moveDirection != Vector3.zero && Vector3.Dot(flatVelocity, moveDirection) < 0)
             {
+                float brake = 1f - brakingFactor * Time.deltaTime;
                 playerRb.linearVelocity = new Vector3(
-                    playerRb.linearVelocity.x * (1f - brakingFactor * Time.deltaTime),
+                    playerRb.linearVelocity.x * brake,
                     playerRb.linearVelocity.y,
-                    playerRb.linearVelocity.z * (1f - brakingFactor * Time.deltaTime)
+                    playerRb.linearVelocity.z * brake
                 );
             }
 
-            // scale force down as you approach max speed, so acceleration feels gradual
-            float currentSpeed = flatVelocity.magnitude;
-            float currentMaxSpeed = maxSpeed * GetCurrentMaxSpeedMultiplier();
-            float speedFactor = Mathf.Clamp01(1f - currentSpeed / currentMaxSpeed);
-            playerRb.AddForce(moveDirection * speed * GetCurrentSpeedMultiplier() * speedFactor, ForceMode.Force);
-
-            // jump on space while grounded
+            // jump on space while grounded (impulse — fine in Update)
             if (Input.GetKeyDown(KeyCode.Space) && isGrounded)
             {
-                playerRb.AddForce(Vector3.up * jumpForce, ForceMode.Impulse);
+                pendingJump = true;
             }
 
-            // turbo boost on shift, along current movement direction (not camera forward)
+            // turbo boost on shift (impulse — fine in Update)
             if (Input.GetKeyDown(KeyCode.LeftShift) || Input.GetKeyDown(KeyCode.RightShift))
             {
-                Vector3 dashDirection = Vector3.zero;
+                pendingTurbo = true;
                 if (moveDirection.sqrMagnitude > 0.001f)
-                    dashDirection = moveDirection;
+                    pendingDashDirection = moveDirection;
                 else if (flatVelocity.sqrMagnitude > 0.001f)
-                    dashDirection = flatVelocity.normalized;
+                    pendingDashDirection = flatVelocity.normalized;
                 else
-                    dashDirection = lastMoveDirection;
+                    pendingDashDirection = lastMoveDirection;
 
-                playerRb.AddForce(dashDirection * turboStrength, ForceMode.Impulse);
-
-                StartTurboSmoke(dashDirection);
+                StartTurboSmoke(pendingDashDirection);
             }
         }
 

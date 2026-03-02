@@ -1028,11 +1028,11 @@ PrefabInstance:
       objectReference: {fileID: 2100000, guid: 5f0f21f757f994b408fa91bd94face64, type: 2}
     - target: {fileID: 6374483613777948157, guid: 24d856f55d1d73a4faa80f25706d21ce, type: 3}
       propertyPath: playerDrag
-      value: 2.5
+      value: 1.5
       objectReference: {fileID: 0}
     - target: {fileID: 6374483613777948157, guid: 24d856f55d1d73a4faa80f25706d21ce, type: 3}
       propertyPath: playerAngularDrag
-      value: 2.5
+      value: 1.5
       objectReference: {fileID: 0}
     - target: {fileID: 7274119030341186240, guid: 24d856f55d1d73a4faa80f25706d21ce, type: 3}
       propertyPath: m_Mesh

@@ -154,8 +154,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5036a60f22d8542ca830e4578804462b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  speed: 15
-  maxSpeed: 200
+  speed: 30
+  maxSpeed: 400
   focalPoint: {fileID: 0}
   brakingFactor: 3
   gravityMultiplier: 3

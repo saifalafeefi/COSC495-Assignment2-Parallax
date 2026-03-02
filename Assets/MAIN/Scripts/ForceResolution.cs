@@ -7,6 +7,6 @@ public static class ForceResolution
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
     static void Apply()
     {
-        Screen.SetResolution(1920, 1080, FullScreenMode.FullScreenWindow);
+        Screen.SetResolution(1920, 1080, FullScreenMode.ExclusiveFullScreen);
     }
 }

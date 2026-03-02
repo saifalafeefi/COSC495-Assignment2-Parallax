@@ -47,6 +47,10 @@ public class SFXManager : MonoBehaviour
     [SerializeField, Min(0f)] float rushFadeInDuration = 0.25f;
     [SerializeField, Min(0f)] float rushFadeOutDuration = 0.35f;
 
+    [Header("UI / Interaction")]
+    [SerializeField] AudioClip uiSelectClip;          // button click, menu selection, any UI interaction
+    [SerializeField, Range(0f, 1f)] float uiSelectVolume = 1f;
+
     [Header("Waves")]
     [SerializeField] AudioClip countdownTickClip;    // each second of the countdown timer
     [SerializeField, Range(0f, 1f)] float countdownTickVolume = 1f;
@@ -159,6 +163,7 @@ public class SFXManager : MonoBehaviour
     public void PlayHauntApply()      => Play(hauntApplyClip, hauntApplyVolume);
     public void PlayRushReady()       => Play(rushReadyClip, rushReadyVolume);
     public void PlayRushActivate()    => Play(rushActivateClip, rushActivateVolume);
+    public void PlayUISelect()         => Play(uiSelectClip, uiSelectVolume);
     public void PlayCountdownTick()    => Play(countdownTickClip, countdownTickVolume);
     public void PlayWaveStart()       => Play(waveStartClip, waveStartVolume);
 

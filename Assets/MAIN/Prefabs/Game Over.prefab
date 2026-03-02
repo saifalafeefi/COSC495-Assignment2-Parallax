@@ -12,6 +12,7 @@ GameObject:
   - component: {fileID: 6672456817381222377}
   - component: {fileID: 1255915767902452704}
   - component: {fileID: 796220036686399488}
+  - component: {fileID: 148808935687810884}
   m_Layer: 5
   m_Name: main menu
   m_TagString: Untagged
@@ -133,6 +134,30 @@ MonoBehaviour:
           m_StringArgument: 
           m_BoolArgument: 0
         m_CallState: 2
+      - m_Target: {fileID: 148808935687810884}
+        m_TargetAssemblyTypeName: UISelectSFX, Assembly-CSharp
+        m_MethodName: Play
+        m_Mode: 1
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
+--- !u!114 &148808935687810884
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 73091019443907191}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 348ce964ca3103845a09b678786e65f5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::UISelectSFX
 --- !u!1 &384410221200306419
 GameObject:
   m_ObjectHideFlags: 0
@@ -693,6 +718,7 @@ GameObject:
   - component: {fileID: 1483594550285453428}
   - component: {fileID: 6483647372023716461}
   - component: {fileID: 8656276502260259077}
+  - component: {fileID: 7581002274291353057}
   m_Layer: 5
   m_Name: restart
   m_TagString: Untagged
@@ -814,6 +840,30 @@ MonoBehaviour:
           m_StringArgument: 
           m_BoolArgument: 0
         m_CallState: 2
+      - m_Target: {fileID: 148808935687810884}
+        m_TargetAssemblyTypeName: UISelectSFX, Assembly-CSharp
+        m_MethodName: Play
+        m_Mode: 1
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
+--- !u!114 &7581002274291353057
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4246968601973948909}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 348ce964ca3103845a09b678786e65f5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::UISelectSFX
 --- !u!1 &6875866899365998773
 GameObject:
   m_ObjectHideFlags: 0

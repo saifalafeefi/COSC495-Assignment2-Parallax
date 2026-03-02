@@ -98,7 +98,7 @@ public class EnemyX : MonoBehaviour
     {
         if (playerGoal == null) return;
 
-        // haunted: aggressively home toward enemy goal (much stronger than stun)
+        // tick timers in Update (time-accurate), forces applied in FixedUpdate
         if (isHaunted)
         {
             hauntTimer -= Time.deltaTime;
@@ -107,7 +107,31 @@ public class EnemyX : MonoBehaviour
                 isHaunted = false;
                 if (hauntVfxInstance != null) Destroy(hauntVfxInstance);
             }
-            else if (cachedEnemyGoal != null)
+            return;
+        }
+
+        if (isStunned)
+        {
+            stunTimer -= Time.deltaTime;
+            if (stunTimer <= 0f)
+            {
+                isStunned = false;
+                postStunRecoverTimer = postStunRecoverDuration;
+            }
+            return;
+        }
+
+        if (postStunRecoverTimer > 0f)
+            postStunRecoverTimer -= Time.deltaTime;
+    }
+
+    void FixedUpdate()
+    {
+        if (playerGoal == null) return;
+
+        if (isHaunted)
+        {
+            if (cachedEnemyGoal != null)
             {
                 Vector3 toGoal = (cachedEnemyGoal.transform.position - transform.position).normalized;
                 enemyRb.AddForce(toGoal * hauntMoveSpeed * globalSpeedMultiplier, ForceMode.Force);
@@ -117,23 +141,13 @@ public class EnemyX : MonoBehaviour
 
         if (isStunned)
         {
-            // drift toward enemy goal while stunned
-            stunTimer -= Time.deltaTime;
-            if (stunTimer <= 0f)
-            {
-                isStunned = false;
-                postStunRecoverTimer = postStunRecoverDuration;
-            }
-            else if (cachedEnemyGoal != null)
+            if (cachedEnemyGoal != null)
             {
                 Vector3 retreatDirection = (cachedEnemyGoal.transform.position - transform.position).normalized;
-                enemyRb.AddForce(retreatDirection * stunSpeed * globalSpeedMultiplier * Time.deltaTime);
+                enemyRb.AddForce(retreatDirection * stunSpeed * globalSpeedMultiplier);
             }
             return;
         }
-
-        if (postStunRecoverTimer > 0f)
-            postStunRecoverTimer -= Time.deltaTime;
 
         Move();
     }
