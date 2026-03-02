@@ -98,8 +98,23 @@ All enemy types can appear from wave 1, controlled by weighted spawn chance slid
 ## Team Roles
 
 - **Saif Alafeefi**: Programming (gameplay systems, powerups, enemy AI, optimization)
+    # Branches
+    - *feature/game-flow*
+    - *feature/powerups*
+    - *feature/enemy-ai*
+    - *feature/code-optimization*
+
 - **Fahad Alhashimi**: Level design (biome maps, arena layout, environment art, assets)
+    # Branches
+    - *fahad-camcera*
+    - *feature/biomes*
+    - *feature/camera-rework*
+
 - **Mohamed Almehairbi**: UI/UX, sound design (menus, HUD, SFX, music), and the glorious game title
+    # Branches
+    - *feature/ui-improvements*
+    - *feature/sfx*
+    - *feature/main-menu*
 
 ## Credits
 
