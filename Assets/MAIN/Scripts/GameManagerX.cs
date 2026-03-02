@@ -211,6 +211,7 @@ public class GameManagerX : MonoBehaviour
     public void RestartGame()
     {
         Time.timeScale = 1f;
+        Time.fixedDeltaTime = 0.02f; // restore physics timestep (smash slow-mo scales this down)
         SceneManager.LoadScene(SceneManager.GetActiveScene().name);
     }
 
@@ -218,6 +219,7 @@ public class GameManagerX : MonoBehaviour
     public void MainMenu()
     {
         Time.timeScale = 1f;
+        Time.fixedDeltaTime = 0.02f;
         SceneManager.LoadScene("Main Menu");
     }
 
