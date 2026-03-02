@@ -8,10 +8,10 @@ using UnityEngine.Rendering.Universal;
 public class PixelateEffect : MonoBehaviour
 {
     [Tooltip("Pixel size. 1 = normal, higher = chunkier pixels")]
-    [Range(1, 16)] public int pixelSize = 3;
+    [Range(1, 16)] public int pixelSize = 1;
 
     // static shared pixel size — survives across scenes, writable from anywhere
-    public static int SharedPixelSize = 3;
+    public static int SharedPixelSize = 1;
 
     private const string PREFS_KEY = "PixelSize";
 
@@ -22,7 +22,7 @@ public class PixelateEffect : MonoBehaviour
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
     static void LoadSavedSettings()
     {
-        SharedPixelSize = PlayerPrefs.GetInt(PREFS_KEY, 3);
+        SharedPixelSize = PlayerPrefs.GetInt(PREFS_KEY, 1);
     }
 
     public static void Save()
