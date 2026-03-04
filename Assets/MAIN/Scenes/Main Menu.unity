@@ -11714,15 +11714,15 @@ MonoBehaviour:
   minFallHeight: 2.5
   enemyHitClip: {fileID: 8300000, guid: 254cfbcee63c0034b82bcbe2a9e9e121, type: 3}
   enemyHitVolume: 1
-  enemyScoreClip: {fileID: 0}
+  enemyScoreClip: {fileID: 8300000, guid: 622192e64e70bc7449f08bbeb339df29, type: 3}
   enemyScoreVolume: 1
   playerGoalClip: {fileID: 8300000, guid: 9667471fd125fa4488cc4e28d649b809, type: 3}
   playerGoalVolume: 1
   powerupPickupClip: {fileID: 8300000, guid: d1a9afed7e04ecf41b72901e0428108f, type: 3}
   powerupPickupVolume: 1
-  smashLaunchClip: {fileID: 0}
+  smashLaunchClip: {fileID: 8300000, guid: 97b1bc12feffb1a4b8db79f07459dfc3, type: 3}
   smashLaunchVolume: 1
-  smashDiveClip: {fileID: 0}
+  smashDiveClip: {fileID: 8300000, guid: 2fbf0dc0a3f9303439733af5cd7859d1, type: 3}
   smashDiveVolume: 1
   smashImpactClip: {fileID: 8300000, guid: 74211322710c65743900ab78785354a2, type: 3}
   smashImpactVolume: 1
@@ -11732,9 +11732,9 @@ MonoBehaviour:
   giantSquishVolume: 1
   hauntApplyClip: {fileID: 8300000, guid: de2cc8b4123899047af4796df49c3d75, type: 3}
   hauntApplyVolume: 1
-  rushReadyClip: {fileID: 0}
+  rushReadyClip: {fileID: 8300000, guid: d16f9fc3cce09d4499e453502d1ea932, type: 3}
   rushReadyVolume: 1
-  rushActivateClip: {fileID: 0}
+  rushActivateClip: {fileID: 8300000, guid: fc4d3f84f701b0740983559eb204acbf, type: 3}
   rushActivateVolume: 1
   rushLoopClip: {fileID: 8300000, guid: 2898c901ce116ef43bce37b11068c98d, type: 3}
   rushLoopVolume: 0.2
