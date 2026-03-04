@@ -11715,7 +11715,7 @@ MonoBehaviour:
   enemyHitClip: {fileID: 8300000, guid: 254cfbcee63c0034b82bcbe2a9e9e121, type: 3}
   enemyHitVolume: 1
   enemyScoreClip: {fileID: 8300000, guid: 622192e64e70bc7449f08bbeb339df29, type: 3}
-  enemyScoreVolume: 1
+  enemyScoreVolume: 0.6
   playerGoalClip: {fileID: 8300000, guid: 9667471fd125fa4488cc4e28d649b809, type: 3}
   playerGoalVolume: 1
   powerupPickupClip: {fileID: 8300000, guid: d1a9afed7e04ecf41b72901e0428108f, type: 3}
